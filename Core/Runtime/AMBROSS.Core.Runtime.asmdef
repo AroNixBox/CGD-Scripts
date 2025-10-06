@@ -1,0 +1,16 @@
+{
+    "name": "AMBROSS.Core.Runtime",
+    "rootNamespace": "Core.Runtime",
+    "references": [
+        "GUID:ac21b5d85fb674646ae68ef89126ab1f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

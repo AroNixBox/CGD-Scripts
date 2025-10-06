@@ -1,0 +1,18 @@
+{
+    "name": "AMBROSS.UI.Editor",
+    "rootNamespace": "UI.Editor",
+    "references": [
+        "GUID:6111f0c43b6d6e14992471e0f7e2e46f"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
