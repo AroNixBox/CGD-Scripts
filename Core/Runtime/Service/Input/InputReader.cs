@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Aroboss.Common.Runtime.Input;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -9,7 +10,7 @@ namespace Aroboss.Core.Runtime.Service.Input {
         void EnablePlayerActions();
     }
 
-    [CreateAssetMenu(fileName = "InputReader", menuName = "InputReader")]
+    [CreateAssetMenu(fileName = "InputReader", menuName = "Input/Reader")]
     public class InputReader : ScriptableObject, InputSystem_Actions.IPlayerActions, InputSystem_Actions.IUIActions, IInputReader {
         [SerializeField] ActionMapName initialActionMap = ActionMapName.Player;
         // The actual input actions asset. This will be initialized in EnablePlayerActions
