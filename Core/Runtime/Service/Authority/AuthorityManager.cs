@@ -4,73 +4,121 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Core.Runtime.Authority {
+    /// <summary>
+    /// Manages turn-based authority between players.
+    /// Caches the last owner to allow validation during the period between turn end and next turn start.
+    /// </summary>
     public class AuthorityManager : MonoBehaviour {
         [SerializeField] AuthorityData authorityData;
         [SerializeField] List<GameObject> players = new();
         [SerializeField] int startIndex;
-
-        /// <summary>
-        /// The information of the current index will not always represent the current active with authority,
-        /// due to that the turn can be ended. So there is no active authority between a turn being ended and the next turn being started.
-        /// </summary>
-        int _currentIndex = -1;
+        
+        // Cache the last owner to validate requests during the "no authority" period
+        // (between ResetAuthority() and the next SetAuthority())
+        object _lastKnownOwner;
 
         [Button]
-        void SetAuthorityToFirstPlayer() {
-            if(players.IsNullOrEmpty(true)) return;
+        public void SetAuthorityToFirstPlayer() {
+            if (players.IsNullOrEmpty(true)) return;
             if (!players.DoesIndexExist(startIndex, true)) return;
             
-            _currentIndex = startIndex;
-            SetAuthorityTo(players[_currentIndex]);
+            SetAuthorityTo(players[startIndex], bypassValidation: true);
         }
 
-        void SetAuthorityTo(GameObject newPlayer) {
-            if (newPlayer is null) return;
-            if (authorityData is null) return;
-            if (players.IsNullOrEmpty(true)) return;
+        /// <summary>
+        /// Sets the authority to a new player.
+        /// </summary>
+        /// <param name="newPlayer">The player to grant authority to</param>
+        /// <param name="bypassValidation">If true, skips owner validation (used for initialization)</param>
+        void SetAuthorityTo(GameObject newPlayer, bool bypassValidation = false) {
+            if (newPlayer == null) {
+                Debug.LogError("AuthorityManager: Cannot set authority to null player.");
+                return;
+            }
+            
+            if (authorityData == null) {
+                Debug.LogError("AuthorityManager: AuthorityData is not assigned.");
+                return;
+            }
             
             if (!players.Contains(newPlayer)) {
-                Debug.LogError("AuthorityManager: Tried to set authority to a player that is not in the players list.");
+                Debug.LogError("AuthorityManager: Tried to set authority to a player that is not registered.");
+                return;
+            }
+
+            // Validate that only the last owner can trigger authority changes
+            if (!bypassValidation && !IsLastKnownOwner(newPlayer)) {
+                Debug.LogError("AuthorityManager: Only the last authority owner can set authority to a new player.");
                 return;
             }
             
+            _lastKnownOwner = newPlayer;
             authorityData.SetAuthority(newPlayer);
         }
-        
-        public void NextPlayer(GameObject previousPlayer) {
-            if(previousPlayer is null) return;
-            if (!players.Contains(previousPlayer)) {
-                Debug.LogError("Tried to set authority from a player that is not in the players list.");
+
+        /// <summary>
+        /// Advances to the next player in the list.
+        /// </summary>
+        /// <param name="currentPlayer">The player currently requesting the turn advance</param>
+        public void NextPlayer(GameObject currentPlayer) {
+            if (currentPlayer == null) {
+                Debug.LogError("AuthorityManager: Current player is null.");
                 return;
             }
-            
-            if(authorityData is null) return;
             
             if (players.IsNullOrEmpty(true)) return;
-            var nextIndexWrapped = (_currentIndex + 1) % players.Count; // Wrap
-            if(!players.DoesIndexExist(nextIndexWrapped, true)) return;
             
-            if(!authorityData.HasAuthority(previousPlayer)) {
-                Debug.LogWarning($"Tried changing authority without the previous player having authority. Previous player: {previousPlayer.name} | Current authority: {authorityData.Owner}");
+            if (!players.Contains(currentPlayer)) {
+                Debug.LogError("AuthorityManager: Current player is not in the players list.");
+                return;
+            }
+
+            // Validate that the requesting player is the last known owner
+            if (!IsLastKnownOwner(currentPlayer)) {
+                Debug.LogError("AuthorityManager: Only the last authority owner can advance to the next player.");
                 return;
             }
             
-            SetAuthorityTo(players[nextIndexWrapped]);
-            _currentIndex = nextIndexWrapped;
+            var currentIndex = players.IndexOf(currentPlayer);
+            var nextPlayer = players[(currentIndex + 1) % players.Count];
+            
+            SetAuthorityTo(nextPlayer, bypassValidation: true);
         }
-        
+
+        /// <summary>
+        /// Requests to end the current turn, clearing authority.
+        /// Authority will be empty until the next player is set.
+        /// </summary>
+        /// <param name="player">The player requesting to end their turn</param>
         public void RequestEndTurn(GameObject player) {
-            if (player is null) return;
-            if (players.IsNullOrEmpty(true)) return;
-            if (authorityData is null) return;
+            if (player == null) {
+                Debug.LogError("AuthorityManager: Player is null.");
+                return;
+            }
             
-            // Dont let another player that doesnt have authority end the turn of the current player
-            if (!authorityData.HasAuthority(player)) {
+            if (authorityData == null) {
+                Debug.LogError("AuthorityManager: AuthorityData is not assigned.");
+                return;
+            }
+            
+            // Validate that the player has current authority OR is the last known owner
+            // This allows ending turn even during the "transition period"
+            if (!authorityData.HasAuthority(player) && !IsLastKnownOwner(player)) {
                 Debug.LogWarning("AuthorityManager: Player requested end turn but does not have authority.");
                 return;
             }
 
+            // Clear authority - entering the "transition period"
+            // _lastKnownOwner remains cached for validation
             authorityData.ResetAuthority();
+        }
+
+        /// <summary>
+        /// Checks if the given player was the last known authority owner.
+        /// Used for validation during the period between ResetAuthority and SetAuthority.
+        /// </summary>
+        bool IsLastKnownOwner(GameObject player) {
+            return _lastKnownOwner != null && ReferenceEquals(_lastKnownOwner, player);
         }
     }
 }
