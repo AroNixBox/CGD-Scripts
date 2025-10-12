@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using Aroboss.Common.Runtime.Input;
+using Common.Runtime.Input;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
-namespace Aroboss.Core.Runtime.Service.Input {
+namespace Core.Runtime.Service.Input {
     // Interface for input reading. Use this when you want to create different input readers
     public interface IInputReader {
         void EnablePlayerActions();
@@ -20,7 +20,8 @@ namespace Aroboss.Core.Runtime.Service.Input {
         
         #region Player Map Shared Data
 
-        public event UnityAction<bool> Interact = delegate { }; // True == Pointer Down, False == Pointer Up
+        public event UnityAction<Vector2> Move = delegate { };
+        public Vector2 MoveDirection => InputActions.Player.Move.ReadValue<Vector2>();
         
         #endregion
         
@@ -43,20 +44,9 @@ namespace Aroboss.Core.Runtime.Service.Input {
         #endregion
         
         #region Player Map Methods
-
-        public void OnInteract(InputAction.CallbackContext context) {
-            switch (context.phase) {
-                case InputActionPhase.Started:
-                    Interact.Invoke(true);
-                    break;
-                case InputActionPhase.Canceled:
-                    Interact.Invoke(false);
-                    return;
-                default:
-                    return;
-            }
+        public void OnMove(InputAction.CallbackContext context) {
+            Move.Invoke(context.ReadValue<Vector2>());
         }
-        
 
         #endregion
 
