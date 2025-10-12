@@ -27,13 +27,22 @@ namespace Gameplay.Runtime {
         [SerializeField] float groundFriction = 100f;
         [SerializeField] float gravity = 30f;
         [SerializeField] float slideGravity = 5f;
-        [SerializeField] float slopeLimit = 30f; // Degrees
+        [InfoBox("<b><u>Slope Limit</u></b>\n" +
+                "Due to active Ragdoll, there is slight friction from the legs while a physical animation is playing \n " +
+                "This causes a slight pull-down effect while on a very steep slope.")]
+        [SerializeField, Range(0f, 70f)] float slopeLimit = 30f; // Degrees
+        
+        [InfoBox("<b><u>Local Momentum</u></b>\n" +
+                 "<b>Off (World Space):</b> Momentum stays fixed in world direction. Player runs forward then rotates 180°? " +
+                 "They keep sliding in the original direction. Great for realistic physics and sliding mechanics.\n" +
+                 "<b>On (Local Space):</b> Momentum rotates with the player. Turn around and your momentum follows. " +
+                 "Perfect for responsive, arcade-style movement.\n" +
+                 "<i>Tip: Enable for tight controls, disable for physics-heavy gameplay.</i>")]
         [SerializeField] bool useLocalMomentum;
         
         StateMachine _stateMachine;
 
         Vector3 _momentum, _savedVelocity, _savedMovementVelocity;
-        
         public event Action<Vector3> OnLand = delegate { };
         #endregion
 
@@ -81,9 +90,45 @@ namespace Gameplay.Runtime {
         void Start() {
             inputReader.EnablePlayerActions();
         }
-
         void Update() {
             _stateMachine.Tick();
+        }
+
+        public void OnGroundContactLost() {
+            if(useLocalMomentum) _momentum = _tr.localToWorldMatrix * _momentum;
+
+            var velocity = GetMovementVelocity();
+            if (velocity.sqrMagnitude >= 0f && _momentum.sqrMagnitude > 0f) {
+                // Find the component of momentum thats alligned with the velocity of our object
+                var projectedMomentum = Vector3.Project(_momentum, velocity.normalized);
+                // Same direction?
+                var dot = VectorMath.GetDotProduct(projectedMomentum.normalized, velocity.normalized);
+                
+                // If the momentum is already sufficient to bring the player to a halt in the air
+                // Set velocity to zero, simulating an instant stop
+                if (projectedMomentum.sqrMagnitude >= velocity.sqrMagnitude && dot > 0f) {
+                    velocity = Vector3.zero;
+                } 
+                // If the momentum is still prepelling the player forward, reduce the velocity by the momentum
+                else if (dot > 0f) {
+                    velocity -= projectedMomentum;
+                }
+                
+                _momentum += velocity;
+                
+                if(useLocalMomentum) _momentum = _tr.worldToLocalMatrix * _momentum;
+            }
+        }
+        
+        // TODO: Use for Animator later on
+        public Vector3 GetMovementVelocity() => _savedMovementVelocity; // Inputdirection * MovementSpeed
+        public Vector3 GetVelocity() => _savedVelocity; // Includes Gravity & Momentum & Movement
+        
+        public void OnGroundContactRegained() {
+            Vector3 collisionVelocity = useLocalMomentum ?
+                _tr.localToWorldMatrix * _momentum 
+                : _momentum;
+            OnLand?.Invoke(collisionVelocity);
         }
         
         public Vector3 GetMomentum() => useLocalMomentum 
@@ -136,6 +181,20 @@ namespace Gameplay.Runtime {
             
             // TODO: Could handle jumping here
 
+            if (currentState is SlidingState) {
+                // Project the entire horizontal momentum onto plane that is defined by the ground normal
+                _momentum = Vector3.ProjectOnPlane(_momentum, _mover.GetGroundNormal());
+                // Remove Upward momentum if positive
+                if (VectorMath.GetDotProduct(_momentum, _tr.up) > 0f) {
+                    _momentum = VectorMath.RemoveDotVector(_momentum, _tr.up);
+                }
+
+                // Direction the player should slide downwards
+                var slideDirection = Vector3.ProjectOnPlane(-_tr.up, _mover.GetGroundNormal()).normalized;
+                // Simulate the gravity that is pulling the player down the slope
+                _momentum += slideDirection * (slideGravity * Time.deltaTime);
+            }
+
             if (useLocalMomentum) _momentum = _tr.worldToLocalMatrix* _momentum;
         }
         void HandleSliding(ref Vector3 horizontalMomentum) {
@@ -146,17 +205,6 @@ namespace Gameplay.Runtime {
             // Stop crazy acceleration due to player input
             movementVelocity = VectorMath.RemoveDotVector(movementVelocity, pointDownVector);
             horizontalMomentum += movementVelocity * Time.fixedDeltaTime;
-            
-            // Project the entire horizontal momentum onto plane that is defined by the ground normal
-            _momentum = Vector3.ProjectOnPlane(_momentum, _mover.GetGroundNormal());
-            // Remove Upward momentum if positive
-            if(VectorMath.GetDotProduct(_momentum, _tr.up) > 0f) {
-                _momentum = VectorMath.RemoveDotVector(_momentum, _tr.up);
-            }
-            // Direction the player should slide downwards
-            var slideDirection = Vector3.ProjectOnPlane(-_tr.up, _mover.GetGroundNormal()).normalized;
-            // Simulate the gravity that is pulling the player down the slope
-            _momentum += slideDirection * (slideGravity * Time.deltaTime);
         }
         void AdjustHorizontalMomentum(ref Vector3 horizontalMomentum, Vector3 movementVelocity) {
             // Figure out what our actual Movement Velocity is and make adjustments

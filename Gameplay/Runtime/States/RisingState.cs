@@ -8,7 +8,7 @@ namespace Gameplay.Runtime {
             _controller = controller;
         }
         public void OnEnter() {
-            Debug.Log("Entering Rising State");
+            _controller.OnGroundContactLost();
         }
         public void Tick() {
 

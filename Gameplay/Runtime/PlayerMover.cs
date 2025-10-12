@@ -1,5 +1,5 @@
+using Sirenix.OdinInspector;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace Gameplay.Runtime {
     /// <summary>
@@ -10,6 +10,10 @@ namespace Gameplay.Runtime {
         #region fields
 
         [Header("Collider Settings")] 
+        [InfoBox("<b><u>Step Height Ratio</u></b>\n" +
+                 "Increasing the Step height ratio, might lift the character up a bit, the higher the value is.\n" +
+                 "Try playing around with the Collider Offset and slightly lift the collider, so it starts a bit above the legs (barely)\n" +
+                 "<i>Tip: Observe what happens to the player y position in runtime when changing the Step height ratio and add the difference to the collider offset.</i>")]
         [SerializeField, Range(0f, 1f)] float stepHeightRatio = 0.05f;
         [SerializeField] float colliderHeight = 0.6f;
         [SerializeField] float colliderThickness = 0.27f;

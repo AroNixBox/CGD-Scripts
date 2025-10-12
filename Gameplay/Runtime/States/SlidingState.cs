@@ -4,19 +4,16 @@ using UnityEngine;
 namespace Gameplay.Runtime {
     public class SlidingState : IState {
         readonly PlayerController _controller;
-        
         public SlidingState(PlayerController controller) {
             _controller = controller;
         }
         
         public void OnEnter() {
-            Debug.Log("Entering Sliding State");
+            _controller.OnGroundContactLost();
         }
         public void Tick() { }
 
-        public void OnExit() {
-            Debug.Log("Exiting Sliding State");
-        }
+        public void OnExit() { }
         // TODO
         public Color GizmoState() {
             throw new System.NotImplementedException();

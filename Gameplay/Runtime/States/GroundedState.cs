@@ -12,7 +12,7 @@ namespace Gameplay.Runtime {
             _controller = controller;
         }
         public void OnEnter() {
-            Debug.Log("Entering GroundedState");
+            _controller.OnGroundContactRegained();
         }
         public void Tick() { }
         public void OnExit() {
