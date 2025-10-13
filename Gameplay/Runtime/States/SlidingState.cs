@@ -7,16 +7,14 @@ namespace Gameplay.Runtime {
         public SlidingState(PlayerController controller) {
             _controller = controller;
         }
-        
         public void OnEnter() {
             _controller.OnGroundContactLost();
         }
         public void Tick() { }
-
         public void OnExit() { }
         // TODO
         public Color GizmoState() {
-            throw new System.NotImplementedException();
+            return Color.softYellow;
         }
     }
 }

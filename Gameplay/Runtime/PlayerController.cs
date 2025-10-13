@@ -20,17 +20,15 @@ namespace Gameplay.Runtime {
         Transform _tr;
         PlayerMover _mover;
 
-        [Header("Movement Settings")]
+        [Header("Settings")]
+        [Title("Movement")]
         [SerializeField] float movementSpeed = 3f;
         [SerializeField] float airFriction = .5f;
         [SerializeField] float airControlRate = 1.5f;
         [SerializeField] float groundFriction = 100f;
         [SerializeField] float gravity = 30f;
         [SerializeField] float slideGravity = 5f;
-        [InfoBox("<b><u>Slope Limit</u></b>\n" +
-                "Due to active Ragdoll, there is slight friction from the legs while a physical animation is playing \n " +
-                "This causes a slight pull-down effect while on a very steep slope.")]
-        [SerializeField, Range(0f, 70f)] float slopeLimit = 30f; // Degrees
+        [SerializeField, Range(0f, 70f)] float slopeLimit = 30f;
         
         [InfoBox("<b><u>Local Momentum</u></b>\n" +
                  "<b>Off (World Space):</b> Momentum stays fixed in world direction. Player runs forward then rotates 180°? " +
@@ -39,6 +37,11 @@ namespace Gameplay.Runtime {
                  "Perfect for responsive, arcade-style movement.\n" +
                  "<i>Tip: Enable for tight controls, disable for physics-heavy gameplay.</i>")]
         [SerializeField] bool useLocalMomentum;
+
+        [Title("Debug")] 
+        [SerializeField] bool debugMode;
+        [SerializeField] float debugBaseStateDrawHeight = 2f;
+        [SerializeField] float debugBaseStateDrawRadius = .5f;
         
         StateMachine _stateMachine;
 
@@ -83,10 +86,10 @@ namespace Gameplay.Runtime {
         void At(IState from, IState to, Func<bool> condition) => _stateMachine.AddTransition(from, to, condition);
         void Any(IState to, Func<bool> condition) => _stateMachine.AddAnyTransition(to, condition);
         
-        // TODO: Figure out if we need this;
         bool IsRising() => VectorMath.GetDotProduct(GetMomentum(), _tr.up) > 0f;
         bool IsFalling() => VectorMath.GetDotProduct(GetMomentum(), _tr.up) < 0f;
         bool IsGroundTooSteep() => Vector3.Angle(_mover.GetGroundNormal(), _tr.up) > slopeLimit;
+        bool IsGrounded() => _stateMachine.GetCurrentState() is GroundedState or SlidingState;
         void Start() {
             inputReader.EnablePlayerActions();
         }
@@ -241,6 +244,31 @@ namespace Gameplay.Runtime {
                 ? direction.normalized
                 : direction;
         }
-        bool IsGrounded() => _stateMachine.GetCurrentState() is GroundedState or SlidingState;
+        
+        void OnDrawGizmos() {
+            if(!debugMode) return;
+            var currentState = _stateMachine?.GetCurrentState();
+            if(currentState == null) return;
+
+            var drawHeight = debugBaseStateDrawHeight;
+            var drawRadius = debugBaseStateDrawRadius;
+            
+            if (currentState is ISubStateMachine subStateMachine) {
+                var subStateMachineDrawHeight = drawHeight;
+                var subStateMachineDrawRadius = drawRadius;
+                
+                // Draw SubStateMachine as Cube
+                Gizmos.color = subStateMachine.GizmoState();
+                Gizmos.DrawCube(transform.position + Vector3.up * subStateMachineDrawHeight, Vector3.one * subStateMachineDrawRadius);
+
+                drawHeight += subStateMachineDrawHeight * .25f;
+                drawRadius *= .5f;
+                
+                currentState = subStateMachine.GetCurrentState();
+            }
+            
+            Gizmos.color = currentState.GizmoState();
+            Gizmos.DrawSphere(transform.position + Vector3.up * drawHeight, drawRadius);
+        }
     }
 }

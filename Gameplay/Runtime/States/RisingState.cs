@@ -18,7 +18,7 @@ namespace Gameplay.Runtime {
         }
         // TODO
         public Color GizmoState() {
-            throw new System.NotImplementedException();
+            return Color.skyBlue;
         }
     }
 }
