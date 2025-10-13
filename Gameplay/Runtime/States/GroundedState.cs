@@ -6,15 +6,16 @@ namespace Gameplay.Runtime {
     // Handle GetCurrentState to also be able to return the SubStateMachine itsself
     // Currently we only return the current state of the SubStateMachine
     public class GroundedState : ISubStateMachine {
-        StateMachine _stateMachine;
+        readonly StateMachine _stateMachine;
         readonly PlayerController _controller;
         public GroundedState(PlayerController controller) {
             _controller = controller;
             
             _stateMachine = new StateMachine();
             var testState = new TestState();
+            var locomotionState = new LocomotionState();
             
-            _stateMachine.SetState(testState);
+            _stateMachine.SetState(locomotionState);
         }
         public void OnEnter() {
             _controller.OnGroundContactRegained();

@@ -39,9 +39,9 @@ namespace Gameplay.Runtime {
         [SerializeField] bool useLocalMomentum;
 
         [Title("Debug")] 
-        [SerializeField] bool debugMode;
+        [SerializeField] bool debugMode = true;
         [SerializeField] float debugBaseStateDrawHeight = 2f;
-        [SerializeField] float debugBaseStateDrawRadius = .5f;
+        [SerializeField] float debugBaseStateDrawRadius = .25f;
         
         StateMachine _stateMachine;
 
@@ -89,7 +89,6 @@ namespace Gameplay.Runtime {
         bool IsRising() => VectorMath.GetDotProduct(GetMomentum(), _tr.up) > 0f;
         bool IsFalling() => VectorMath.GetDotProduct(GetMomentum(), _tr.up) < 0f;
         bool IsGroundTooSteep() => Vector3.Angle(_mover.GetGroundNormal(), _tr.up) > slopeLimit;
-        bool IsGrounded() => _stateMachine.GetCurrentState() is GroundedState or SlidingState;
         void Start() {
             inputReader.EnablePlayerActions();
         }
@@ -97,6 +96,10 @@ namespace Gameplay.Runtime {
             _stateMachine.Tick();
         }
 
+        /// <summary>
+        /// Converts horizontal movement velocity into momentum when leaving the ground.
+        /// Prevents velocity stacking by removing overlapping momentum components and ensures smooth air transitions.
+        /// </summary>
         public void OnGroundContactLost() {
             if(useLocalMomentum) _momentum = _tr.localToWorldMatrix * _momentum;
 
@@ -140,15 +143,23 @@ namespace Gameplay.Runtime {
         void FixedUpdate() {
             _mover.CheckForGround();
             HandleMomentum();
-            var velocity = _stateMachine.GetCurrentState() is GroundedState 
-                ? CalculateMovementVelocity()
-                : Vector3.zero;
+            
+            var velocity = Vector3.zero;
+            var currentState = _stateMachine.GetCurrentState();
+            if (currentState is GroundedState and ISubStateMachine groundedSubStateMachine) {
+                // Only use player input if we are in the Locomotion State
+                if (groundedSubStateMachine.GetCurrentState() is LocomotionState) {
+                    velocity = CalculateMovementVelocity();
+                }
+            }
+            
             velocity += useLocalMomentum 
                 ? _tr.localToWorldMatrix * _momentum 
                 : _momentum;
             
             // Use the extended sensor range if we are grounded
-            _mover.SetExtendedSensorRange(IsGrounded());
+            var grounded = _stateMachine.GetCurrentState() is GroundedState or SlidingState;
+            _mover.SetExtendedSensorRange(grounded);
             _mover.SetVelocity(velocity);
             
             _savedVelocity = velocity;
@@ -162,17 +173,19 @@ namespace Gameplay.Runtime {
             
             verticalMomentum -= _tr.up * (gravity * Time.deltaTime);
             
-            // TODO: Are we in the grounded state, means we reached the ground, stop putting negative force on them
             var currentState = _stateMachine.GetCurrentState();
             if(currentState is GroundedState && VectorMath.GetDotProduct(verticalMomentum, _tr.up) < 0f) {
                 verticalMomentum = Vector3.zero;
             }
-            
-            if (!IsGrounded()) {
-                AdjustHorizontalMomentum(ref horizontalMomentum, CalculateMovementVelocity());
-            }
 
-            if (currentState is SlidingState) {
+            { // Handle player air control when in the air
+                var inAir = currentState is FallingState or RisingState;
+                if (inAir) {
+                    HandleAirControl(ref horizontalMomentum);
+                } 
+            }
+            
+            if (currentState is SlidingState) { // handle sliding control, when on a too steep slope
                 HandleSliding(ref horizontalMomentum);
             }
             
@@ -203,13 +216,14 @@ namespace Gameplay.Runtime {
         void HandleSliding(ref Vector3 horizontalMomentum) {
             // Slope direction, in which it descends
             var pointDownVector = Vector3.ProjectOnPlane(_mover.GetGroundNormal(), _tr.up).normalized;
-            var movementVelocity = CalculateMovementVelocity();
+            var movementVelocity = CalculateMovementVelocity(); // controlled sliding movement
             
             // Stop crazy acceleration due to player input
             movementVelocity = VectorMath.RemoveDotVector(movementVelocity, pointDownVector);
             horizontalMomentum += movementVelocity * Time.fixedDeltaTime;
         }
-        void AdjustHorizontalMomentum(ref Vector3 horizontalMomentum, Vector3 movementVelocity) {
+        void HandleAirControl(ref Vector3 horizontalMomentum) {
+            var movementVelocity = CalculateMovementVelocity(); // Controlled falling
             // Figure out what our actual Movement Velocity is and make adjustments
             // Moving faster than our movement speed? => From a fall e.g.
             if (horizontalMomentum.magnitude > movementSpeed) {
@@ -255,14 +269,14 @@ namespace Gameplay.Runtime {
             
             if (currentState is ISubStateMachine subStateMachine) {
                 var subStateMachineDrawHeight = drawHeight;
-                var subStateMachineDrawRadius = drawRadius;
+                var subStateMachineDrawSize = drawRadius * 2;
                 
                 // Draw SubStateMachine as Cube
                 Gizmos.color = subStateMachine.GizmoState();
-                Gizmos.DrawCube(transform.position + Vector3.up * subStateMachineDrawHeight, Vector3.one * subStateMachineDrawRadius);
+                Gizmos.DrawCube(transform.position + Vector3.up * subStateMachineDrawHeight, Vector3.one * subStateMachineDrawSize);
 
-                drawHeight += subStateMachineDrawHeight * .25f;
-                drawRadius *= .5f;
+                drawHeight += subStateMachineDrawHeight * .25f; // place slightly above
+                drawRadius *= .5f; // smaller sphere, because we are in a substate  
                 
                 currentState = subStateMachine.GetCurrentState();
             }
