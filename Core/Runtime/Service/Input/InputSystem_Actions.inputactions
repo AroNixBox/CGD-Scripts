@@ -16,6 +16,15 @@
                     "initialStateCheck": true
                 },
                 {
+                    "name": "Look",
+                    "type": "Value",
+                    "id": "e5c53d64-d4eb-49fe-95c3-9ae4e47f4214",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
                     "name": "Combat",
                     "type": "Button",
                     "id": "f5563a73-08fa-4800-be64-c58c7ee67015",
@@ -129,6 +138,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "StopCombat",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "114a4504-adfd-4316-92b4-6ae08f7a2568",
+                    "path": "<Mouse>/delta",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Look",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

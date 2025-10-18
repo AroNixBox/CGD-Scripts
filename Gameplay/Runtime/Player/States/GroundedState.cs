@@ -21,9 +21,9 @@ namespace Gameplay.Runtime {
             _controller = controller;
             
             _stateMachine = new StateMachine();
-            _awaitingAuthorityState = new AwaitingAuthorityState();
+            _awaitingAuthorityState = new AwaitingAuthorityState(controller);
             _combatStanceState = new CombatStanceState(controller);
-            _locomotionState = new LocomotionState();
+            _locomotionState = new LocomotionState(controller);
 
             // These two can not be Event based, since the status of authority can change outside of grounded
             At(_awaitingAuthorityState, _locomotionState, HasAuthority);

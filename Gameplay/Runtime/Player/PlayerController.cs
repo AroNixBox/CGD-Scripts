@@ -3,8 +3,11 @@ using Common.Runtime.Extensions;
 using Core.Runtime.Authority;
 using Core.Runtime.Service.Input;
 using Extensions.FSM;
+using Gameplay.Runtime.Player.Camera;
 using Sirenix.OdinInspector;
+using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Gameplay.Runtime {
     /// <summary>
@@ -17,7 +20,7 @@ namespace Gameplay.Runtime {
         [Header("References")]
         // TODO: Refactor into own component maybe?
         [field: SerializeField, Required] public InputReader InputReader { get; private set; }
-        [field: SerializeField] public Transform CameraTransform { get; private set; } // TODO: Could be required later on
+        [field: SerializeField, Required] public PlayerCameraControls PlayerCameraControls { get; private set; }
         public AuthorityEntity AuthorityEntity { get; private set; }
 
         Transform _tr;
@@ -257,13 +260,11 @@ namespace Gameplay.Runtime {
         Vector3 CalculateMovementVelocity() => CalculateMovementDirection() * movementSpeed;
         // Based on Camera and players input
         // TODO: Check if we need to Vector3.zero if no auth, because technicall we dont have any input then
-        Vector3 CalculateMovementDirection() { 
-            var direction = CameraTransform == null
-                // No camera found, use input as single direction calculation 
-                ? _tr.right * InputReader.MoveDirection.x + _tr.forward * InputReader.MoveDirection.y
-                // We found a camera, use the direction the camera is facing, not the players direction
-                : Vector3.ProjectOnPlane(CameraTransform.right, _tr.up).normalized * InputReader.MoveDirection.x +
-                  Vector3.ProjectOnPlane(CameraTransform.forward, _tr.up).normalized * InputReader.MoveDirection.y;
+        Vector3 CalculateMovementDirection() {
+            var activeCamera = PlayerCameraControls.GetActiveCameraTransform();
+            Debug.Log(activeCamera.name + ": " + activeCamera.transform.forward);
+            var direction = Vector3.ProjectOnPlane(activeCamera.right, _tr.up).normalized * InputReader.MoveDirection.x +
+                  Vector3.ProjectOnPlane(activeCamera.forward, _tr.up).normalized * InputReader.MoveDirection.y;
 
             return direction.magnitude > 1f 
                 ? direction.normalized

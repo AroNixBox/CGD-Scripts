@@ -104,6 +104,15 @@ namespace Core.Runtime.Service.Input
                     ""initialStateCheck"": true
                 },
                 {
+                    ""name"": ""Look"",
+                    ""type"": ""Value"",
+                    ""id"": ""e5c53d64-d4eb-49fe-95c3-9ae4e47f4214"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
                     ""name"": ""Combat"",
                     ""type"": ""Button"",
                     ""id"": ""f5563a73-08fa-4800-be64-c58c7ee67015"",
@@ -217,6 +226,17 @@ namespace Core.Runtime.Service.Input
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""StopCombat"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""114a4504-adfd-4316-92b4-6ae08f7a2568"",
+                    ""path"": ""<Mouse>/delta"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Look"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -765,6 +785,7 @@ namespace Core.Runtime.Service.Input
             // Player
             m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
             m_Player_Move = m_Player.FindAction("Move", throwIfNotFound: true);
+            m_Player_Look = m_Player.FindAction("Look", throwIfNotFound: true);
             m_Player_Combat = m_Player.FindAction("Combat", throwIfNotFound: true);
             m_Player_StopCombat = m_Player.FindAction("StopCombat", throwIfNotFound: true);
             m_Player_Fire = m_Player.FindAction("Fire", throwIfNotFound: true);
@@ -860,6 +881,7 @@ namespace Core.Runtime.Service.Input
         private readonly InputActionMap m_Player;
         private List<IPlayerActions> m_PlayerActionsCallbackInterfaces = new List<IPlayerActions>();
         private readonly InputAction m_Player_Move;
+        private readonly InputAction m_Player_Look;
         private readonly InputAction m_Player_Combat;
         private readonly InputAction m_Player_StopCombat;
         private readonly InputAction m_Player_Fire;
@@ -878,6 +900,10 @@ namespace Core.Runtime.Service.Input
             /// Provides access to the underlying input action "Player/Move".
             /// </summary>
             public InputAction @Move => m_Wrapper.m_Player_Move;
+            /// <summary>
+            /// Provides access to the underlying input action "Player/Look".
+            /// </summary>
+            public InputAction @Look => m_Wrapper.m_Player_Look;
             /// <summary>
             /// Provides access to the underlying input action "Player/Combat".
             /// </summary>
@@ -919,6 +945,9 @@ namespace Core.Runtime.Service.Input
                 @Move.started += instance.OnMove;
                 @Move.performed += instance.OnMove;
                 @Move.canceled += instance.OnMove;
+                @Look.started += instance.OnLook;
+                @Look.performed += instance.OnLook;
+                @Look.canceled += instance.OnLook;
                 @Combat.started += instance.OnCombat;
                 @Combat.performed += instance.OnCombat;
                 @Combat.canceled += instance.OnCombat;
@@ -942,6 +971,9 @@ namespace Core.Runtime.Service.Input
                 @Move.started -= instance.OnMove;
                 @Move.performed -= instance.OnMove;
                 @Move.canceled -= instance.OnMove;
+                @Look.started -= instance.OnLook;
+                @Look.performed -= instance.OnLook;
+                @Look.canceled -= instance.OnLook;
                 @Combat.started -= instance.OnCombat;
                 @Combat.performed -= instance.OnCombat;
                 @Combat.canceled -= instance.OnCombat;
@@ -1236,6 +1268,13 @@ namespace Core.Runtime.Service.Input
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnMove(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Look" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnLook(InputAction.CallbackContext context);
             /// <summary>
             /// Method invoked when associated input action "Combat" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
             /// </summary>

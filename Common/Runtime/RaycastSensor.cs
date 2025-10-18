@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Gameplay.Runtime {
+namespace Common.Runtime {
     public class RaycastSensor {
         public float CastLength = 1.0f;
         public LayerMask Layermask = 255; // Default to everything

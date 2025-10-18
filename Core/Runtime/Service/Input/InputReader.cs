@@ -22,6 +22,8 @@ namespace Core.Runtime.Service.Input {
 
         public event UnityAction<Vector2> Move = delegate { };
         public Vector2 MoveDirection => InputActions.Player.Move.ReadValue<Vector2>();
+        public event UnityAction<Vector2, bool> LookDirection = delegate { }; // Look Direction Changed & Input Device Mouse?
+        public event UnityAction<bool> IsLooking = delegate { }; // Is the Player Currently trying to look around, Important due to controller deadzone when trying to look
         public event UnityAction Fire = delegate { };
         public event UnityAction StopCombat = delegate { };
         public event UnityAction Combat = delegate { };
@@ -71,7 +73,20 @@ namespace Core.Runtime.Service.Input {
             
             StopCombat.Invoke();
         }
-        
+
+        public void OnLook(InputAction.CallbackContext context) {
+            switch (context) {
+                case {phase: InputActionPhase.Started}:
+                    IsLooking.Invoke(true);
+                    break;
+                case {phase: InputActionPhase.Canceled}:
+                    IsLooking.Invoke(false);
+                    break;
+                case {phase: InputActionPhase.Performed}:
+                    LookDirection.Invoke(context.ReadValue<Vector2>(), IsDeviceMouse(context));
+                    break;
+            }
+        }
 
         #endregion
 
@@ -121,6 +136,10 @@ namespace Core.Runtime.Service.Input {
 
         #endregion
         
+        bool IsDeviceMouse(InputAction.CallbackContext context) {
+            // Debug.Log($"Device name: {context.control.device.name}");
+            return context.control.device.name == "Mouse";
+        }
         public void EnablePlayerActions() {
             InputActions ??= new InputSystem_Actions();
             
