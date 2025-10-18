@@ -1,5 +1,6 @@
 using System;
 using Common.Runtime.Extensions;
+using Core.Runtime.Authority;
 using Core.Runtime.Service.Input;
 using Extensions.FSM;
 using Sirenix.OdinInspector;
@@ -9,13 +10,15 @@ namespace Gameplay.Runtime {
     /// <summary>
     /// Calculates Momentum & Velocity based on the Player Input
     /// </summary>
-    [RequireComponent(typeof(PlayerMover))]
+    [RequireComponent(typeof(PlayerMover), typeof(AuthorityEntity))]
     public class PlayerController : MonoBehaviour {
         #region fields
 
         [Header("References")]
-        [SerializeField, Required] InputReader inputReader;
-        [SerializeField] Transform cameraTransform; // TODO: Could be required later on
+        // TODO: Refactor into own component maybe?
+        [field: SerializeField, Required] public InputReader InputReader { get; private set; }
+        [field: SerializeField] public Transform CameraTransform { get; private set; } // TODO: Could be required later on
+        public AuthorityEntity AuthorityEntity { get; private set; }
 
         Transform _tr;
         PlayerMover _mover;
@@ -46,12 +49,13 @@ namespace Gameplay.Runtime {
         StateMachine _stateMachine;
 
         Vector3 _momentum, _savedVelocity, _savedMovementVelocity;
-        public event Action<Vector3> OnLand = delegate { };
+        public event Action<Vector3> OnLand = delegate { }; // TODO: Call when entering Grounded State
         #endregion
 
         void Awake() {
             _tr = transform;
             _mover = GetComponent<PlayerMover>();
+            AuthorityEntity = GetComponent<AuthorityEntity>();
             
             SetupStateMachine();
         }
@@ -59,11 +63,15 @@ namespace Gameplay.Runtime {
         void SetupStateMachine() {
             _stateMachine = new StateMachine();
             
+            // States are independent of authority
+            // Player can fall even without authority
             var grounded = new GroundedState(this);
             var falling = new FallingState(this);
             var sliding = new SlidingState(this);
             var rising = new RisingState(this);
             
+            // TODO: Check if we want to check for rising if Grounded and Not falling
+            // Check for Falling if not rising but falling and not grounded
             At(grounded, rising, IsRising);
             At(grounded, sliding, () => _mover.IsGrounded() && IsGroundTooSteep());
             At(grounded, falling, () => !_mover.IsGrounded());
@@ -81,16 +89,22 @@ namespace Gameplay.Runtime {
             At(rising, falling, IsFalling);
             
             _stateMachine.SetState(falling);
+
+            return;
+            
+            void At(IState from, IState to, Func<bool> condition) => _stateMachine.AddTransition(from, to, condition);
+            void Any(IState to, Func<bool> condition) => _stateMachine.AddAnyTransition(to, condition);
+        
+            bool IsRising() => VectorMath.GetDotProduct(GetMomentum(), _tr.up) > 0f;
+            bool IsFalling() => VectorMath.GetDotProduct(GetMomentum(), _tr.up) < 0f;
+            bool IsGroundTooSteep() => Vector3.Angle(_mover.GetGroundNormal(), _tr.up) > slopeLimit;
         }
         
-        void At(IState from, IState to, Func<bool> condition) => _stateMachine.AddTransition(from, to, condition);
-        void Any(IState to, Func<bool> condition) => _stateMachine.AddAnyTransition(to, condition);
-        
-        bool IsRising() => VectorMath.GetDotProduct(GetMomentum(), _tr.up) > 0f;
-        bool IsFalling() => VectorMath.GetDotProduct(GetMomentum(), _tr.up) < 0f;
-        bool IsGroundTooSteep() => Vector3.Angle(_mover.GetGroundNormal(), _tr.up) > slopeLimit;
+        // TODO: Use for Animator later on
+        public Vector3 GetMovementVelocity() => _savedMovementVelocity; // Inputdirection * MovementSpeed
+        public Vector3 GetVelocity() => _savedVelocity; // Includes Gravity & Momentum & Movement
         void Start() {
-            inputReader.EnablePlayerActions();
+            InputReader.EnablePlayerActions();
         }
         void Update() {
             _stateMachine.Tick();
@@ -103,7 +117,7 @@ namespace Gameplay.Runtime {
         public void OnGroundContactLost() {
             if(useLocalMomentum) _momentum = _tr.localToWorldMatrix * _momentum;
 
-            var velocity = GetMovementVelocity();
+            var velocity = _savedMovementVelocity;
             if (velocity.sqrMagnitude >= 0f && _momentum.sqrMagnitude > 0f) {
                 // Find the component of momentum thats alligned with the velocity of our object
                 var projectedMomentum = Vector3.Project(_momentum, velocity.normalized);
@@ -125,10 +139,6 @@ namespace Gameplay.Runtime {
                 if(useLocalMomentum) _momentum = _tr.worldToLocalMatrix * _momentum;
             }
         }
-        
-        // TODO: Use for Animator later on
-        public Vector3 GetMovementVelocity() => _savedMovementVelocity; // Inputdirection * MovementSpeed
-        public Vector3 GetVelocity() => _savedVelocity; // Includes Gravity & Momentum & Movement
         
         public void OnGroundContactRegained() {
             Vector3 collisionVelocity = useLocalMomentum ?
@@ -246,13 +256,14 @@ namespace Gameplay.Runtime {
         }
         Vector3 CalculateMovementVelocity() => CalculateMovementDirection() * movementSpeed;
         // Based on Camera and players input
-        Vector3 CalculateMovementDirection() {
-            var direction = cameraTransform == null
+        // TODO: Check if we need to Vector3.zero if no auth, because technicall we dont have any input then
+        Vector3 CalculateMovementDirection() { 
+            var direction = CameraTransform == null
                 // No camera found, use input as single direction calculation 
-                ? _tr.right * inputReader.MoveDirection.x + _tr.forward * inputReader.MoveDirection.y
+                ? _tr.right * InputReader.MoveDirection.x + _tr.forward * InputReader.MoveDirection.y
                 // We found a camera, use the direction the camera is facing, not the players direction
-                : Vector3.ProjectOnPlane(cameraTransform.right, _tr.up).normalized * inputReader.MoveDirection.x +
-                  Vector3.ProjectOnPlane(cameraTransform.forward, _tr.up).normalized * inputReader.MoveDirection.y;
+                : Vector3.ProjectOnPlane(CameraTransform.right, _tr.up).normalized * InputReader.MoveDirection.x +
+                  Vector3.ProjectOnPlane(CameraTransform.forward, _tr.up).normalized * InputReader.MoveDirection.y;
 
             return direction.magnitude > 1f 
                 ? direction.normalized

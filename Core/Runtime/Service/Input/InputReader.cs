@@ -22,6 +22,9 @@ namespace Core.Runtime.Service.Input {
 
         public event UnityAction<Vector2> Move = delegate { };
         public Vector2 MoveDirection => InputActions.Player.Move.ReadValue<Vector2>();
+        public event UnityAction Fire = delegate { };
+        public event UnityAction StopCombat = delegate { };
+        public event UnityAction Combat = delegate { };
         
         #endregion
         
@@ -47,6 +50,28 @@ namespace Core.Runtime.Service.Input {
         public void OnMove(InputAction.CallbackContext context) {
             Move.Invoke(context.ReadValue<Vector2>());
         }
+        
+        // Placeholder
+        public void OnFire(InputAction.CallbackContext context) {
+            if(context.phase != InputActionPhase.Performed) { return; }
+            
+            Fire.Invoke();
+        }
+        
+        // Placeholder
+        public void OnCombat(InputAction.CallbackContext context) {
+            if(context.phase != InputActionPhase.Performed) { return; }
+            
+            Combat.Invoke();
+        }
+        
+        // Placeholder
+        public void OnStopCombat(InputAction.CallbackContext context) {
+            if(context.phase != InputActionPhase.Performed) { return; }
+            
+            StopCombat.Invoke();
+        }
+        
 
         #endregion
 

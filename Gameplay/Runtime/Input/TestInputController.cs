@@ -25,10 +25,10 @@ namespace Gameplay.Runtime.Input {
         
         // TODO: Should not be here, but rather when the player presses the shoot button
         [Button]
-        void EndTurn() => authorityManager?.RequestEndTurn(_authorityEntity);
+        void EndTurn() => authorityManager?.ResetAuthority(_authorityEntity);
         
         // TODO: Should not be here in PlayerInputController, but rather be called from after the bulletcam ends e.G.
         [Button]
-        void StartNewTurn() => authorityManager.NextPlayer(_authorityEntity);
+        void StartNewTurn() => authorityManager.GiveNextEntityAuthority(_authorityEntity);
     }
 }

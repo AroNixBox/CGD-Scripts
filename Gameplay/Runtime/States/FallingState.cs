@@ -7,13 +7,9 @@ namespace Gameplay.Runtime {
         public FallingState(PlayerController controller) {
             _controller = controller;
         }
-        public void OnEnter() {
-            Debug.Log("Entering FallingState");
-        }
+        public void OnEnter() { }
         public void Tick() { }
-        public void OnExit() {
-            Debug.Log("Exiting FallingState");
-        }
+        public void OnExit() { }
         // TODO
         public Color GizmoState() {
             return Color.navyBlue;

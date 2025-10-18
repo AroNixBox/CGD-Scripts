@@ -102,6 +102,33 @@ namespace Core.Runtime.Service.Input
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Combat"",
+                    ""type"": ""Button"",
+                    ""id"": ""f5563a73-08fa-4800-be64-c58c7ee67015"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""StopCombat"",
+                    ""type"": ""Button"",
+                    ""id"": ""a76c9474-4a4c-4285-92e8-e037f52c1999"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Fire"",
+                    ""type"": ""Button"",
+                    ""id"": ""a61ec261-5fc5-4e50-bece-9bc5f925af84"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -159,6 +186,39 @@ namespace Core.Runtime.Service.Input
                     ""action"": ""Move"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""cc388e5b-1f11-45ac-bb31-e4f1b7a20abc"",
+                    ""path"": ""<Keyboard>/1"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Combat"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f6010bf9-98ef-4d2a-855b-5cdc057bf054"",
+                    ""path"": ""<Keyboard>/3"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Fire"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8d9a1a4e-170e-4eca-9629-b7ba4f4877ab"",
+                    ""path"": ""<Keyboard>/2"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""StopCombat"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -705,6 +765,9 @@ namespace Core.Runtime.Service.Input
             // Player
             m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
             m_Player_Move = m_Player.FindAction("Move", throwIfNotFound: true);
+            m_Player_Combat = m_Player.FindAction("Combat", throwIfNotFound: true);
+            m_Player_StopCombat = m_Player.FindAction("StopCombat", throwIfNotFound: true);
+            m_Player_Fire = m_Player.FindAction("Fire", throwIfNotFound: true);
             // UI
             m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
             m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -797,6 +860,9 @@ namespace Core.Runtime.Service.Input
         private readonly InputActionMap m_Player;
         private List<IPlayerActions> m_PlayerActionsCallbackInterfaces = new List<IPlayerActions>();
         private readonly InputAction m_Player_Move;
+        private readonly InputAction m_Player_Combat;
+        private readonly InputAction m_Player_StopCombat;
+        private readonly InputAction m_Player_Fire;
         /// <summary>
         /// Provides access to input actions defined in input action map "Player".
         /// </summary>
@@ -812,6 +878,18 @@ namespace Core.Runtime.Service.Input
             /// Provides access to the underlying input action "Player/Move".
             /// </summary>
             public InputAction @Move => m_Wrapper.m_Player_Move;
+            /// <summary>
+            /// Provides access to the underlying input action "Player/Combat".
+            /// </summary>
+            public InputAction @Combat => m_Wrapper.m_Player_Combat;
+            /// <summary>
+            /// Provides access to the underlying input action "Player/StopCombat".
+            /// </summary>
+            public InputAction @StopCombat => m_Wrapper.m_Player_StopCombat;
+            /// <summary>
+            /// Provides access to the underlying input action "Player/Fire".
+            /// </summary>
+            public InputAction @Fire => m_Wrapper.m_Player_Fire;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -841,6 +919,15 @@ namespace Core.Runtime.Service.Input
                 @Move.started += instance.OnMove;
                 @Move.performed += instance.OnMove;
                 @Move.canceled += instance.OnMove;
+                @Combat.started += instance.OnCombat;
+                @Combat.performed += instance.OnCombat;
+                @Combat.canceled += instance.OnCombat;
+                @StopCombat.started += instance.OnStopCombat;
+                @StopCombat.performed += instance.OnStopCombat;
+                @StopCombat.canceled += instance.OnStopCombat;
+                @Fire.started += instance.OnFire;
+                @Fire.performed += instance.OnFire;
+                @Fire.canceled += instance.OnFire;
             }
 
             /// <summary>
@@ -855,6 +942,15 @@ namespace Core.Runtime.Service.Input
                 @Move.started -= instance.OnMove;
                 @Move.performed -= instance.OnMove;
                 @Move.canceled -= instance.OnMove;
+                @Combat.started -= instance.OnCombat;
+                @Combat.performed -= instance.OnCombat;
+                @Combat.canceled -= instance.OnCombat;
+                @StopCombat.started -= instance.OnStopCombat;
+                @StopCombat.performed -= instance.OnStopCombat;
+                @StopCombat.canceled -= instance.OnStopCombat;
+                @Fire.started -= instance.OnFire;
+                @Fire.performed -= instance.OnFire;
+                @Fire.canceled -= instance.OnFire;
             }
 
             /// <summary>
@@ -1140,6 +1236,27 @@ namespace Core.Runtime.Service.Input
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnMove(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Combat" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnCombat(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "StopCombat" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnStopCombat(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Fire" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnFire(InputAction.CallbackContext context);
         }
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.
