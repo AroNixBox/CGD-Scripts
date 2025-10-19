@@ -15,21 +15,21 @@ namespace Gameplay.Runtime {
         // States
         readonly IState _combatStanceState;
         readonly IState _locomotionState;
-        readonly IState _awaitingAuthorityState;
+
         public GroundedState(PlayerController controller) {
             _inputReader = controller.InputReader;
             _controller = controller;
             
             _stateMachine = new StateMachine();
-            _awaitingAuthorityState = new AwaitingAuthorityState(controller);
+            IState awaitingAuthorityState = new AwaitingAuthorityState(controller);
             _combatStanceState = new CombatStanceState(controller);
             _locomotionState = new LocomotionState(controller);
 
             // These two can not be Event based, since the status of authority can change outside of grounded
-            At(_awaitingAuthorityState, _locomotionState, HasAuthority);
-            Any(_awaitingAuthorityState, () => !HasAuthority());
+            At(awaitingAuthorityState, _locomotionState, HasAuthority);
+            Any(awaitingAuthorityState, () => !HasAuthority());
             
-            _stateMachine.SetState(_awaitingAuthorityState);
+            _stateMachine.SetState(awaitingAuthorityState);
             
             return;
             
@@ -41,7 +41,6 @@ namespace Gameplay.Runtime {
         public void OnEnter() {
             _inputReader.Combat += OnCombat;
             _inputReader.StopCombat += OnStopCombat;
-            _inputReader.Fire += OnFire;
             
             _controller.OnGroundContactRegained();
         }
@@ -51,16 +50,6 @@ namespace Gameplay.Runtime {
             if(CurrentState is not LocomotionState) return; // Only allow transitions from Combat Stance
             
             _stateMachine.SetState(_combatStanceState);
-        }
-        void OnFire() { // Transition to next state is handled by the HasAuthority check
-            if(!HasAuthority()) return;
-            if(CurrentState is not CombatStanceState) return;
-            
-            // TODO: We wanna enable the bullet cam here and only call;
-            // _controller.AuthorityEntity.ResetAuthority();
-            // This;
-            _controller.AuthorityEntity.GiveNextAuthority();
-            // TODO: Should then be called from the BulletCam when the next Player has his turn
         }
 
         // Switch from Combat to Locomotion when in Combat state and having Auth
@@ -77,7 +66,6 @@ namespace Gameplay.Runtime {
         public void OnExit() {
             _inputReader.Combat -= OnCombat;
             _inputReader.StopCombat -= OnStopCombat;
-            _inputReader.Fire -= OnFire;
         }
         public Color GizmoState() {
             return Color.grey;

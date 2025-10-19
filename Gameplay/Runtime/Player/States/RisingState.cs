@@ -14,7 +14,6 @@ namespace Gameplay.Runtime {
 
         }
         public void OnExit() {
-            Debug.Log("Exiting Rising State");
         }
         // TODO
         public Color GizmoState() {

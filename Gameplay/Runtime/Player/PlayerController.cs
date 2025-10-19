@@ -162,14 +162,21 @@ namespace Gameplay.Runtime {
             var velocity = Vector3.zero;
             var currentState = _stateMachine.GetCurrentState();
             if (currentState is GroundedState and ISubStateMachine groundedSubStateMachine) {
+                var currentSubState = groundedSubStateMachine.GetCurrentState();
                 // Only use player input if we are in the Locomotion State
-                if (groundedSubStateMachine.GetCurrentState() is LocomotionState) {
+                if (currentSubState is LocomotionState) {
                     velocity = CalculateMovementVelocity();
+                    if (velocity.magnitude > 0.1f) 
+                        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(velocity.normalized), Time.deltaTime * rotationSpeed);
+                }else if (currentSubState is CombatStanceState) {
+                    // Rotate the player model towards look direction
+                    var activeCamera = PlayerCameraControls.GetActiveCameraTransform();
+                    // Rotate towards active camera forward direction, ignoring vertical difference
+                    var lookDirection = Vector3.ProjectOnPlane(activeCamera.forward, _tr.up).normalized;
+                    _tr.rotation = Quaternion.Slerp(_tr.rotation, Quaternion.LookRotation(lookDirection), Time.deltaTime * rotationSpeed);
                 }
             }
             
-            if (velocity.magnitude > 0.1f) transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(velocity.normalized), Time.deltaTime * rotationSpeed);
-
             
             velocity += useLocalMomentum 
                 ? _tr.localToWorldMatrix * _momentum 
