@@ -5,9 +5,7 @@ using Core.Runtime.Service.Input;
 using Extensions.FSM;
 using Gameplay.Runtime.Player.Camera;
 using Sirenix.OdinInspector;
-using Unity.Cinemachine;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Gameplay.Runtime {
     /// <summary>
@@ -18,7 +16,7 @@ namespace Gameplay.Runtime {
         #region fields
 
         [Header("References")]
-        // TODO: Refactor into own component maybe?
+        // TODO: Refactor InputReader
         [field: SerializeField, Required] public InputReader InputReader { get; private set; }
         [field: SerializeField, Required] public PlayerCameraControls PlayerCameraControls { get; private set; }
         public AuthorityEntity AuthorityEntity { get; private set; }
@@ -35,6 +33,10 @@ namespace Gameplay.Runtime {
         [SerializeField] float gravity = 30f;
         [SerializeField] float slideGravity = 5f;
         [SerializeField, Range(0f, 70f)] float slopeLimit = 30f;
+        [InfoBox("<b><u>Rotation Speed</u></b>\n" +
+                 "Only the visual model is rotated, has nothing to do with any physics or player movement.\n" +
+                 "<i>Tip: Higher values make the model snap quickly, lower values create a smoother turn.</i>")]
+        [SerializeField, Range(0f, 10f)] float rotationSpeed = 5f;
         
         [InfoBox("<b><u>Local Momentum</u></b>\n" +
                  "<b>Off (World Space):</b> Momentum stays fixed in world direction. Player runs forward then rotates 180°? " +
@@ -166,6 +168,9 @@ namespace Gameplay.Runtime {
                 }
             }
             
+            if (velocity.magnitude > 0.1f) transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(velocity.normalized), Time.deltaTime * rotationSpeed);
+
+            
             velocity += useLocalMomentum 
                 ? _tr.localToWorldMatrix * _momentum 
                 : _momentum;
@@ -262,10 +267,9 @@ namespace Gameplay.Runtime {
         // TODO: Check if we need to Vector3.zero if no auth, because technicall we dont have any input then
         Vector3 CalculateMovementDirection() {
             var activeCamera = PlayerCameraControls.GetActiveCameraTransform();
-            Debug.Log(activeCamera.name + ": " + activeCamera.transform.forward);
             var direction = Vector3.ProjectOnPlane(activeCamera.right, _tr.up).normalized * InputReader.MoveDirection.x +
                   Vector3.ProjectOnPlane(activeCamera.forward, _tr.up).normalized * InputReader.MoveDirection.y;
-
+            
             return direction.magnitude > 1f 
                 ? direction.normalized
                 : direction;
