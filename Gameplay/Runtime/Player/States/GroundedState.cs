@@ -68,7 +68,7 @@ namespace Gameplay.Runtime {
             _inputReader.Combat -= OnCombat;
             _inputReader.StopCombat -= OnStopCombat;
             
-            _stateMachine.SetState(null);
+            _stateMachine.ResetState();
         }
         public Color GizmoState() {
             return Color.grey;

@@ -22,8 +22,9 @@ namespace Extensions.FSM {
         }
 
         public void SetState(IState state) {
-            if (state == _currentState)
+            if (state == _currentState) {
                 return;
+            }
             
             _currentState?.OnExit();
             _currentState = state;
@@ -32,6 +33,11 @@ namespace Extensions.FSM {
             _currentTransitions ??= EmptyTransitions;
             
             _currentState.OnEnter();
+        }
+        public void ResetState() {
+            _currentState?.OnExit();
+            _currentState = null;
+            _currentTransitions = EmptyTransitions;
         }
         
     
