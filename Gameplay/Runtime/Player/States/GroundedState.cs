@@ -15,21 +15,20 @@ namespace Gameplay.Runtime {
         // States
         readonly IState _combatStanceState;
         readonly IState _locomotionState;
+        readonly IState _awaitingAuthorityState;
 
         public GroundedState(PlayerController controller) {
             _inputReader = controller.InputReader;
             _controller = controller;
             
             _stateMachine = new StateMachine();
-            IState awaitingAuthorityState = new AwaitingAuthorityState(controller);
+            _awaitingAuthorityState = new AwaitingAuthorityState(controller);
             _combatStanceState = new CombatStanceState(controller);
             _locomotionState = new LocomotionState(controller);
 
             // These two can not be Event based, since the status of authority can change outside of grounded
-            At(awaitingAuthorityState, _locomotionState, HasAuthority);
-            Any(awaitingAuthorityState, () => !HasAuthority());
-            
-            _stateMachine.SetState(awaitingAuthorityState);
+            At(_awaitingAuthorityState, _locomotionState, HasAuthority);
+            Any(_awaitingAuthorityState, () => !HasAuthority());
             
             return;
             
@@ -39,6 +38,8 @@ namespace Gameplay.Runtime {
         bool HasAuthority() => _controller.AuthorityEntity.HasAuthority();
         
         public void OnEnter() {
+            _stateMachine.SetState(_awaitingAuthorityState);
+            
             _inputReader.Combat += OnCombat;
             _inputReader.StopCombat += OnStopCombat;
             
@@ -66,6 +67,8 @@ namespace Gameplay.Runtime {
         public void OnExit() {
             _inputReader.Combat -= OnCombat;
             _inputReader.StopCombat -= OnStopCombat;
+            
+            _stateMachine.SetState(null);
         }
         public Color GizmoState() {
             return Color.grey;

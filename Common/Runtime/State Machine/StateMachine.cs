@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace Extensions.FSM
-{
+namespace Extensions.FSM {
     public class StateMachine {
         IState _currentState;
 
@@ -34,6 +33,7 @@ namespace Extensions.FSM
             
             _currentState.OnEnter();
         }
+        
     
         public void AddTransition(IState from, IState to, Func<bool> predicate) {
             if (!_transitions.TryGetValue(from, out var transitions)) {

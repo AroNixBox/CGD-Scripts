@@ -3,6 +3,7 @@ using Common.Runtime.Extensions;
 using Core.Runtime.Authority;
 using Core.Runtime.Service.Input;
 using Extensions.FSM;
+using Gameplay.Runtime.Player.Animation;
 using Gameplay.Runtime.Player.Camera;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -19,6 +20,7 @@ namespace Gameplay.Runtime {
         // TODO: Refactor InputReader
         [field: SerializeField, Required] public InputReader InputReader { get; private set; }
         [field: SerializeField, Required] public PlayerCameraControls PlayerCameraControls { get; private set; }
+        [field: SerializeField, Required] public PlayerAnimatorController AnimatorController { get; private set; }
         public AuthorityEntity AuthorityEntity { get; private set; }
 
         Transform _tr;
@@ -26,6 +28,7 @@ namespace Gameplay.Runtime {
 
         [Header("Settings")]
         [Title("Movement")]
+        [InfoBox("<i>When Changing the MovementSpeed, dont forget to change the Locomotion-Animation-State Thresholds on the Animator</i>", InfoMessageType.Warning)]
         [SerializeField] float movementSpeed = 3f;
         [SerializeField] float airFriction = .5f;
         [SerializeField] float airControlRate = 1.5f;
