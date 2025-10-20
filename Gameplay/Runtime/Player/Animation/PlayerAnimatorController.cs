@@ -1,4 +1,3 @@
-using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -18,9 +17,16 @@ namespace Gameplay.Runtime.Player.Animation {
         /// <summary>
         /// Can be used to check if the animation is finished playing
         /// </summary>
-        public bool IsAnimationFinished(int animationLayer) {
-            var stateInfo = animator.GetCurrentAnimatorStateInfo(animationLayer);
-            return stateInfo.normalizedTime >= .9f;
+        /// <returns>
+        /// True if the animation is not the current one or if it's almost finished playing
+        /// </returns>
+        public bool IsAnimationFinished(int stateHashName, float endThreshold) {
+            var stateInfo = animator.GetCurrentAnimatorStateInfo(AnimationParameters.GetAnimationLayer(stateHashName));
+            return stateInfo.shortNameHash != stateHashName || stateInfo.normalizedTime >= endThreshold;
+        }
+
+        public bool IsInTransition(int layer) {
+            return animator.IsInTransition(layer);
         }
         /// <param name="forceChange">Transition into an animation even if it's already playing</param>
         public void ChangeAnimationState(int stateHashName) {
@@ -31,9 +37,5 @@ namespace Gameplay.Runtime.Player.Animation {
         }
         public void EnableRootMotion(bool enable) => animator.applyRootMotion = enable;
         public float GetAnimatorFloat(int parameter) => animator.GetFloat(parameter);
-
-        public bool IsInTransition(int layer) {
-            return animator.IsInTransition(layer);
-        }
     }
 }

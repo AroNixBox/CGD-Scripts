@@ -76,25 +76,20 @@ namespace Gameplay.Runtime {
             var grounded = new GroundedState(this);
             var falling = new FallingState(this);
             var sliding = new SlidingState(this);
-            var rising = new RisingState(this);
+            var landing = new LandingState(this);
             
-            // TODO: Check if we want to check for rising if Grounded and Not falling
-            // Check for Falling if not rising but falling and not grounded
-            At(grounded, rising, IsRising);
             At(grounded, sliding, () => _mover.IsGrounded() && IsGroundTooSteep());
             At(grounded, falling, () => !_mover.IsGrounded());
             
-            At(falling, rising, IsRising);
-            At(falling, grounded, () => _mover.IsGrounded() && !IsGroundTooSteep());
+            At(falling, landing, () => _mover.IsGrounded() && !IsGroundTooSteep());
             At(falling, sliding, () => _mover.IsGrounded() && IsGroundTooSteep());
             
-            At(sliding, rising, IsRising);
             At(sliding, falling, () => !_mover.IsGrounded());
+            // Directly going to grounded
             At(sliding, grounded, () => _mover.IsGrounded() && !IsGroundTooSteep());
             
-            At(rising, grounded, () => _mover.IsGrounded() && !IsGroundTooSteep());
-            At(rising, sliding, () => _mover.IsGrounded() && IsGroundTooSteep());
-            At(rising, falling, IsFalling);
+            At(landing, grounded, () => landing.HasLanded());
+            At(landing, falling, () => !_mover.IsGrounded());
             
             _stateMachine.SetState(falling);
 
@@ -103,7 +98,7 @@ namespace Gameplay.Runtime {
             void At(IState from, IState to, Func<bool> condition) => _stateMachine.AddTransition(from, to, condition);
             void Any(IState to, Func<bool> condition) => _stateMachine.AddAnyTransition(to, condition);
         
-            bool IsRising() => VectorMath.GetDotProduct(GetMomentum(), _tr.up) > 0f;
+            // Can be used to check if we are moving downwards
             bool IsFalling() => VectorMath.GetDotProduct(GetMomentum(), _tr.up) < 0f;
             bool IsGroundTooSteep() => Vector3.Angle(_mover.GetGroundNormal(), _tr.up) > slopeLimit;
         }
@@ -186,7 +181,7 @@ namespace Gameplay.Runtime {
                 : _momentum;
             
             // Use the extended sensor range if we are grounded
-            var grounded = _stateMachine.GetCurrentState() is GroundedState or SlidingState;
+            var grounded = _stateMachine.GetCurrentState() is GroundedState or SlidingState or LandingState;
             _mover.SetExtendedSensorRange(grounded);
             _mover.SetVelocity(velocity);
             
@@ -202,12 +197,13 @@ namespace Gameplay.Runtime {
             verticalMomentum -= _tr.up * (gravity * Time.deltaTime);
             
             var currentState = _stateMachine.GetCurrentState();
-            if(currentState is GroundedState && VectorMath.GetDotProduct(verticalMomentum, _tr.up) < 0f) {
+            if(currentState is GroundedState or LandingState 
+               && VectorMath.GetDotProduct(verticalMomentum, _tr.up) < 0f) {
                 verticalMomentum = Vector3.zero;
             }
 
             { // Handle player air control when in the air
-                var inAir = currentState is FallingState or RisingState;
+                var inAir = currentState is FallingState;
                 if (inAir) {
                     HandleAirControl(ref horizontalMomentum);
                 } 
@@ -217,7 +213,7 @@ namespace Gameplay.Runtime {
                 HandleSliding(ref horizontalMomentum);
             }
             
-            var friction = currentState is GroundedState ? groundFriction : airFriction;
+            var friction = currentState is GroundedState or LandingState ? groundFriction : airFriction;
             horizontalMomentum = Vector3.MoveTowards(horizontalMomentum, Vector3.zero, friction * Time.deltaTime);
             
             // Update final momentum;
@@ -289,7 +285,7 @@ namespace Gameplay.Runtime {
             if(!debugMode) return;
             var currentState = _stateMachine?.GetCurrentState();
             if(currentState == null) return;
-
+        
             var drawHeight = debugBaseStateDrawHeight;
             var drawRadius = debugBaseStateDrawRadius;
             
@@ -300,7 +296,7 @@ namespace Gameplay.Runtime {
                 // Draw SubStateMachine as Cube
                 Gizmos.color = subStateMachine.GizmoState();
                 Gizmos.DrawCube(transform.position + Vector3.up * subStateMachineDrawHeight, Vector3.one * subStateMachineDrawSize);
-
+        
                 drawHeight += subStateMachineDrawHeight * .25f; // place slightly above
                 drawRadius *= .5f; // smaller sphere, because we are in a substate  
                 

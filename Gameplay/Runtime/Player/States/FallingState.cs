@@ -12,6 +12,7 @@ namespace Gameplay.Runtime {
         }
 
         public void OnEnter() {
+            _controller.OnGroundContactLost();
             _animatorController.ChangeAnimationState(AnimationParameters.Fall);
         }
         public void Tick() { }
