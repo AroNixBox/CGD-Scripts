@@ -8,13 +8,15 @@ namespace Gameplay.Runtime.Player.Animation {
         
         // States
         public static readonly int Locomotion = Animator.StringToHash("Locomotion");
+        public static readonly int CastSpell = Animator.StringToHash("Cast Spell");
         public static readonly int Fall = Animator.StringToHash("Fall");
         public static readonly int Land = Animator.StringToHash("Land");
         
         static readonly Dictionary<int, int> AnimationLayers = new (){
             {Locomotion, 0}, 
             {Fall, 0},
-            {Land, 0}
+            {Land, 0},
+            {CastSpell, 0}
         };
         public static int GetAnimationLayer(int animationHash) {
             return AnimationLayers.GetValueOrDefault(animationHash, 0);
@@ -25,7 +27,8 @@ namespace Gameplay.Runtime.Player.Animation {
             // when the other starts, the ended one snaps into the startPos of the new one
             {Locomotion, 0.25f},
             {Fall, 0.25f},
-            {Land, 0.25f}
+            {Land, 0.25f},
+            {CastSpell, 0.125f}
         };
         
         public static float GetAnimationDuration(int animationHash) {
