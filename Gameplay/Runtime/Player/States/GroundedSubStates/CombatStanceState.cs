@@ -1,10 +1,9 @@
-﻿using Core.Runtime.Authority;
-using Core.Runtime.Service.Input;
+﻿using Core.Runtime.Service.Input;
+using Cysharp.Threading.Tasks;
 using Extensions.FSM;
 using Gameplay.Runtime.Player.Animation;
 using Gameplay.Runtime.Player.Camera;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace Gameplay.Runtime {
     public class CombatStanceState : IState {
@@ -21,7 +20,6 @@ namespace Gameplay.Runtime {
 
         public void OnEnter() {
             _inputReader.Fire += Attack;
-            _inputReader.Fire += _playerController.AuthorityEntity.GiveNextAuthority; // TODO: Call from Spell, but remember that we dont wanna go in no auth state immediatly
             _cameraControls.SwitchToCameraMode(PlayerCameraControls.CameraMode.FirstPerson);
         }
 
@@ -29,11 +27,18 @@ namespace Gameplay.Runtime {
         
         void Attack() {
             _animatorController.ChangeAnimationState(AnimationParameters.CastSpell);
+            _playerController.AuthorityEntity.ResetAuthority();
+            _ = NextPlayer();
+        }
+
+        // TODO: Switching to the next player should not be time based, but rather called from the ability we cast
+        async UniTask NextPlayer() {
+            await UniTask.Delay(5000); // Placeholder for spell cast duration
+            _playerController.AuthorityEntity.GiveNextAuthority();
         }
 
         public void OnExit() {
             _inputReader.Fire -= Attack;
-            _inputReader.Fire -= _playerController.AuthorityEntity.GiveNextAuthority;
         }
         public Color GizmoState() {
             return Color.darkOrange;
