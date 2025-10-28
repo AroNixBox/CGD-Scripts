@@ -21,6 +21,8 @@ namespace Gameplay.Runtime {
         [field: SerializeField, Required] public InputReader InputReader { get; private set; }
         [field: SerializeField, Required] public PlayerCameraControls PlayerCameraControls { get; private set; }
         [field: SerializeField, Required] public PlayerAnimatorController AnimatorController { get; private set; }
+        [SerializeField, Required] Transform modelRoot;
+        
         public AuthorityEntity AuthorityEntity { get; private set; }
 
         Transform _tr;
@@ -165,13 +167,13 @@ namespace Gameplay.Runtime {
                 if (currentSubState is LocomotionState) {
                     velocity = CalculateMovementVelocity();
                     if (velocity.magnitude > 0.1f) 
-                        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(velocity.normalized), Time.deltaTime * rotationSpeed);
+                        modelRoot.rotation = Quaternion.Slerp(modelRoot.rotation, Quaternion.LookRotation(velocity.normalized), Time.deltaTime * rotationSpeed);
                 }else if (currentSubState is CombatStanceState) {
                     // Rotate the player model towards look direction
                     var activeCamera = PlayerCameraControls.GetActiveCameraTransform();
                     // Rotate towards active camera forward direction, ignoring vertical difference
                     var lookDirection = Vector3.ProjectOnPlane(activeCamera.forward, _tr.up).normalized;
-                    _tr.rotation = Quaternion.Slerp(_tr.rotation, Quaternion.LookRotation(lookDirection), Time.deltaTime * rotationSpeed);
+                    modelRoot.rotation = Quaternion.Slerp(modelRoot.rotation, Quaternion.LookRotation(lookDirection), Time.deltaTime * rotationSpeed);
                 }
             }
             
