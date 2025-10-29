@@ -29,14 +29,10 @@ namespace Gameplay.Runtime {
                 var entity = rb.GetComponent<AuthorityEntity>();
                 
                 var forceRadius = explosionRadius * .5f;
+
+                if (entity == null) continue;
                 
-                if (entity == null) {
-                    rb.AddExplosionForce(explosionForce * .25f, forceOrigin, forceRadius, upwardsModifier,
-                        ForceMode.Impulse);
-                    continue;
-                }
-                
-                rb.AddExplosionForce(explosionForce, forceOrigin, forceRadius, upwardsModifier,
+                rb.AddExplosionForce(explosionForce * .25f, forceOrigin, forceRadius, upwardsModifier,
                     ForceMode.Impulse);
             }
         }
