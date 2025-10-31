@@ -25,10 +25,14 @@ namespace Gameplay.Runtime {
             _awaitingAuthorityState = new AwaitingAuthorityState(controller);
             _combatStanceState = new CombatStanceState(controller);
             _locomotionState = new LocomotionState(controller);
+            var combatRecoveryState = new CombatRecoveryState(controller);
 
             // These two can not be Event based, since the status of authority can change outside of grounded
             At(_awaitingAuthorityState, _locomotionState, HasAuthority);
-            Any(_awaitingAuthorityState, () => !HasAuthority());
+            At(_combatStanceState, combatRecoveryState, () => !HasAuthority());
+            
+            At(_locomotionState, _awaitingAuthorityState, () => !HasAuthority());
+            At(combatRecoveryState, _awaitingAuthorityState , () => combatRecoveryState.IsRecoveryFinished() && !HasAuthority());
             
             return;
             

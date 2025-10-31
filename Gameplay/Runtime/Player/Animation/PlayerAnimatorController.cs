@@ -19,6 +19,10 @@ namespace Gameplay.Runtime.Player.Animation {
             var stateInfo = animator.GetCurrentAnimatorStateInfo(AnimationParameters.GetAnimationLayer(stateHashName));
             return stateInfo.shortNameHash != stateHashName || stateInfo.normalizedTime >= endThreshold;
         }
+        public bool IsCurrentAnimationFinished(float endThreshold, int layer) {
+            var stateInfo = animator.GetCurrentAnimatorStateInfo(layer);
+            return stateInfo.normalizedTime >= endThreshold;
+        }
 
         public bool IsInTransition(int layer) {
             return animator.IsInTransition(layer);
