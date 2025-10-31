@@ -15,7 +15,7 @@ namespace Gameplay.Runtime {
             _controller.OnGroundContactLost();
             _animatorController.ChangeAnimationState(AnimationParameters.Fall);
         }
-        public void Tick() { }
+        public void Tick(float deltaTime) { }
         public void OnExit() { }
         // TODO
         public Color GizmoState() {

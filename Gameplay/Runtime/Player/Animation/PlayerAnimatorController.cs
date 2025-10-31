@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -5,14 +6,8 @@ namespace Gameplay.Runtime.Player.Animation {
     public class PlayerAnimatorController : MonoBehaviour {
         [SerializeField, Required] Animator animator;
         
-        public void ChangeAnimationClipSpeed(int speedMultiplierParam, float newSpeed) {
-            animator.SetFloat(speedMultiplierParam, newSpeed);
-        }
         public void UpdateAnimatorSpeed(float speed) {
             animator.SetFloat(AnimationParameters.MovementSpeed, speed);
-        }
-        public AnimatorStateInfo GetCurrentAnimationState(int animationLayer) {
-            return animator.GetCurrentAnimatorStateInfo(animationLayer);
         }
         /// <summary>
         /// Can be used to check if the animation is finished playing
@@ -28,6 +23,7 @@ namespace Gameplay.Runtime.Player.Animation {
         public bool IsInTransition(int layer) {
             return animator.IsInTransition(layer);
         }
+        
         /// <param name="forceChange">Transition into an animation even if it's already playing</param>
         public void ChangeAnimationState(int stateHashName) {
             animator.CrossFade(
@@ -35,7 +31,6 @@ namespace Gameplay.Runtime.Player.Animation {
                 AnimationParameters.GetAnimationDuration(stateHashName), 
                 AnimationParameters.GetAnimationLayer(stateHashName));
         }
-        public void EnableRootMotion(bool enable) => animator.applyRootMotion = enable;
         public float GetAnimatorFloat(int parameter) => animator.GetFloat(parameter);
     }
 }

@@ -23,8 +23,7 @@ namespace Gameplay.Runtime {
             _cameraControls.SwitchToCameraMode(PlayerCameraControls.CameraMode.FirstPerson);
         }
 
-        public void Tick() { }
-        
+        public void Tick(float deltaTime) { }        
         void Attack() {
             _animatorController.ChangeAnimationState(AnimationParameters.CastSpell);
             _playerController.AuthorityEntity.ResetAuthority();

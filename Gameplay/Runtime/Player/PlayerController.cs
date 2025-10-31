@@ -1,4 +1,5 @@
 using System;
+using Common.Runtime;
 using Common.Runtime.Extensions;
 using Core.Runtime.Authority;
 using Core.Runtime.Service.Input;
@@ -37,6 +38,8 @@ namespace Gameplay.Runtime {
         [SerializeField] float groundFriction = 100f;
         [SerializeField] float gravity = 30f;
         [SerializeField] float slideGravity = 5f;
+        [InfoBox("Minimum time the player has to be falling before landing state is required to transition to grounded.\n")]
+        [SerializeField] float fallTimeUntilLandingRequired = 1f;
         [SerializeField, Range(0f, 70f)] float slopeLimit = 30f;
         [InfoBox("<b><u>Rotation Speed</u></b>\n" +
                  "Only the visual model is rotated, has nothing to do with any physics or player movement.\n" +
@@ -60,6 +63,7 @@ namespace Gameplay.Runtime {
 
         Vector3 _momentum, _savedVelocity, _savedMovementVelocity;
         public event Action<Vector3> OnLand = delegate { }; // TODO: Call when entering Grounded State
+        
         #endregion
 
         void Awake() {
@@ -83,7 +87,8 @@ namespace Gameplay.Runtime {
             At(grounded, sliding, () => _mover.IsGrounded() && IsGroundTooSteep());
             At(grounded, falling, () => !_mover.IsGrounded());
             
-            At(falling, landing, () => _mover.IsGrounded() && !IsGroundTooSteep());
+            At(falling, landing, () => _mover.IsGrounded() && !IsGroundTooSteep() && FallingLongEnough());
+            At(falling, grounded, () => _mover.IsGrounded() && !IsGroundTooSteep() && !FallingLongEnough());
             At(falling, sliding, () => _mover.IsGrounded() && IsGroundTooSteep());
             
             At(sliding, falling, () => !_mover.IsGrounded());
@@ -103,6 +108,8 @@ namespace Gameplay.Runtime {
             // Can be used to check if we are moving downwards
             bool IsFalling() => VectorMath.GetDotProduct(GetMomentum(), _tr.up) < 0f;
             bool IsGroundTooSteep() => Vector3.Angle(_mover.GetGroundNormal(), _tr.up) > slopeLimit;
+            
+            bool FallingLongEnough() => falling.GetFallingTime() > fallTimeUntilLandingRequired;
         }
         
         // TODO: Use for Animator later on
@@ -112,7 +119,7 @@ namespace Gameplay.Runtime {
             InputReader.EnablePlayerActions();
         }
         void Update() {
-            _stateMachine.Tick();
+            _stateMachine.Tick(Time.deltaTime);
         }
 
         /// <summary>

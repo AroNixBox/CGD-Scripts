@@ -13,12 +13,12 @@ namespace Extensions.FSM {
 
         static readonly List<Transition> EmptyTransitions = new (0);
     
-        public void Tick() {
+        public void Tick(float deltaTime) {
             var transition = GetTransition();
             if (transition != null)
                 SetState(transition.To);
             
-            _currentState?.Tick();
+            _currentState?.Tick(deltaTime);
         }
 
         public void SetState(IState state) {

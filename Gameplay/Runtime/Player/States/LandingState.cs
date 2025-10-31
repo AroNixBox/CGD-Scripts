@@ -12,7 +12,7 @@ namespace Gameplay.Runtime {
         public void OnEnter() {
             _animatorController.ChangeAnimationState(AnimationParameters.Land);
         }
-        public void Tick() { }
+        public void Tick(float deltaTime) { }
 
         public bool HasLanded() {
             var landStateHash = AnimationParameters.Land;

@@ -19,7 +19,7 @@ namespace Gameplay.Runtime {
             _animatorController.ChangeAnimationState(AnimationParameters.Locomotion);
         }
 
-        public void Tick() {
+        public void Tick(float deltaTime) {
             var currentMoveSpeed = _playerController.GetMovementVelocity();
             _animatorController.UpdateAnimatorSpeed(currentMoveSpeed.magnitude);
         }

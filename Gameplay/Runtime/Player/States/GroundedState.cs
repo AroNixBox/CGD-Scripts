@@ -60,8 +60,8 @@ namespace Gameplay.Runtime {
             
             _stateMachine.SetState(_locomotionState);
         }
-        public void Tick() {
-            _stateMachine?.Tick();
+        public void Tick(float deltaTime) {
+            _stateMachine?.Tick(deltaTime);
         }
 
         public void OnExit() {
