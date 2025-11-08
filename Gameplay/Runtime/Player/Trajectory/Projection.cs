@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Pool;
 using UnityEngine.SceneManagement;
 
 namespace Gameplay.Runtime.Player.Trajectory {
@@ -8,12 +8,48 @@ namespace Gameplay.Runtime.Player.Trajectory {
         [SerializeField] Transform environment;
         [SerializeField] LineRenderer trajectoryLine;
         [SerializeField] int trajectoryPhysicsIterations;
+
+        [SerializeField] int poolDefaultCapacity;
+        [SerializeField] int poolMaxSize;
+
+        IObjectPool<Projectile> _pool;
         
         Scene _simulationScene;
         PhysicsScene _physicsScene;
 
         readonly Dictionary<Transform, Transform> _realToPhysicsMapping = new();
 
+        public void InitializePool(Projectile projectilePrefab) {
+            _pool = new ObjectPool<Projectile>(
+                createFunc: () => CreateItem(projectilePrefab),
+                actionOnGet: OnGet,
+                actionOnRelease: OnRelease,
+                actionOnDestroy: Destroy,
+                collectionCheck: true,
+                defaultCapacity: poolDefaultCapacity,
+                maxSize: poolMaxSize
+            );
+        }
+
+        void OnGet(Projectile projectile) {
+            projectile.gameObject.SetActive(true);
+        }
+
+        void OnRelease(Projectile projectile) {
+            projectile.gameObject.SetActive(false);
+            projectile.ResetRigidbody();
+        }
+
+        // Creates a new pooled GameObject the first time (and whenever the pool needs more).
+        Projectile CreateItem(Projectile prefab) {
+            var objClone = Instantiate(prefab);
+            objClone.GetComponent<MeshRenderer>().enabled = false; // Disable visuals
+            SceneManager.MoveGameObjectToScene(objClone.gameObject, _simulationScene);
+            // Disable completely
+            objClone.gameObject.SetActive(false);
+            return objClone;
+        }
+        
         void Start() {
             CreatePhysicsScene();
         }
@@ -60,12 +96,9 @@ namespace Gameplay.Runtime.Player.Trajectory {
             }
         }
 
-        public void SimulateTrajectory(Projectile projectile, Vector3 pos, Vector3 velocity) {
-            var projectileClone = Instantiate(projectile, pos, Quaternion.identity);
-            
-            projectileClone.GetComponent<MeshRenderer>().enabled = false; // Disable visuals
-            SceneManager.MoveGameObjectToScene(projectileClone.gameObject, _simulationScene);            
-            projectileClone.GetComponent<Projectile>().Init(velocity);
+        public void SimulateTrajectory(Vector3 pos, Vector3 velocity) {
+            var projectileClone = _pool.Get();
+            projectileClone.GetComponent<Projectile>().Init(pos, velocity);
 
             trajectoryLine.positionCount = trajectoryPhysicsIterations;
             for(var i = 0; i < trajectoryPhysicsIterations; i++) {
@@ -73,8 +106,7 @@ namespace Gameplay.Runtime.Player.Trajectory {
                 trajectoryLine.SetPosition(i, projectileClone.transform.position);
             }
             
-            // TODO: Pool
-            projectileClone.gameObject.SetActive(false);
+            _pool.Release(projectileClone);
         }
     }
 }

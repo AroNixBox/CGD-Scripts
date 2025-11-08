@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Trajectory {
@@ -10,8 +9,14 @@ namespace Gameplay.Runtime.Player.Trajectory {
             _rb = GetComponent<Rigidbody>();
         }
 
-        public void Init(Vector3 velocity) {
+        public void Init(Vector3 position, Vector3 velocity) {
+            _rb.position = position;
             _rb.AddForce(velocity, ForceMode.Impulse);
+        }
+
+        public void ResetRigidbody() {
+            _rb.linearVelocity = Vector3.zero;
+            _rb.angularVelocity = Vector3.zero;
         }
     }
 }
