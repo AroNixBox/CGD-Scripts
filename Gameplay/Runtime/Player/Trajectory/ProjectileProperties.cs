@@ -1,19 +1,13 @@
-﻿using UnityEngine;
-
-namespace Gameplay.Runtime.Player.Trajectory {
+﻿namespace Gameplay.Runtime.Player.Trajectory {
     public struct ProjectileProperties {
-        public Vector3 direction;
-        public Vector3 initialPosition;
-        public readonly float initialSpeed;
-        public readonly float mass;
-        public readonly float drag;
+        public float InitialSpeed { get; }
+        public float Mass { get; }
+        public float Drag { get; }
         
-        public ProjectileProperties(Vector3 direction, Vector3 initialPosition, float initialSpeed, float mass, float drag) {
-            this.direction = direction;
-            this.initialPosition = initialPosition;
-            this.initialSpeed = initialSpeed;
-            this.mass = mass;
-            this.drag = drag;
+        public ProjectileProperties(float initialSpeed, float mass, float drag) {
+            InitialSpeed = initialSpeed;
+            Mass = mass;
+            Drag = drag;
         }
     }
 }

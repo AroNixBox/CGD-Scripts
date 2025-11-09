@@ -1,9 +1,10 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Trajectory {
     [RequireComponent(typeof(LineRenderer))]
     public class TrajectoryPredictor : MonoBehaviour {
+        public static TrajectoryPredictor Instance;
+        
         [SerializeField] int resolution;
         [SerializeField, Range(0.01f, 0.5f), Tooltip("The time increment used to calculate the trajectory")]
         float increment = 0.025f;
@@ -13,19 +14,23 @@ namespace Gameplay.Runtime.Player.Trajectory {
         LineRenderer _lineRenderer;
 
         void Awake() {
+            if (Instance != null)
+                Destroy(this);
+            else
+                Instance = this;
+            
             _lineRenderer = GetComponent<LineRenderer>();
         }
 
-        public void PredictTrajectory(ProjectileProperties projectileProperties) {
-            var velocity = projectileProperties.initialSpeed / projectileProperties.mass *
-                           projectileProperties.direction;
-            var position = projectileProperties.initialPosition;
+        public void PredictTrajectory(WeaponProperties weaponProperties, ProjectileProperties projectileProperties) {
+            var velocity = projectileProperties.InitialSpeed / projectileProperties.Mass *
+                           weaponProperties.ShootDirection;
+            var position = weaponProperties.MuzzlePosition;
             
             _lineRenderer.positionCount = resolution;
 
-
             for (var i = 0; i < resolution; i++) {
-                velocity = CalculateNewVelocity(velocity, projectileProperties.drag);
+                velocity = CalculateNewVelocity(velocity, projectileProperties.Drag);
                 var nextPosition = position + velocity * increment;
                 var overlap = Vector3.Distance(position, nextPosition) * rayOverlap;
                 _lineRenderer.SetPosition(i, position);
@@ -51,9 +56,8 @@ namespace Gameplay.Runtime.Player.Trajectory {
             return velocity;
         }
 
-        void UpdateLineRenderer(int count, (int point, Vector3 pos) pointPos) {
-            _lineRenderer.positionCount = count;
-            _lineRenderer.SetPosition(pointPos.point, pointPos.pos);
+        public void RemoveTrajectoryLine() {
+            _lineRenderer.positionCount = 0;
         }
     }
 }

@@ -12,13 +12,15 @@ namespace Gameplay.Runtime.Player.Trajectory {
 
         void Update() {
             var projectileProperties = new ProjectileProperties(
-                direction: startTransform.forward,
-                initialPosition: GetStartPosition(),
                 initialSpeed: throwForce,
                 mass: prefabRb.mass,
-                drag: prefabRb.mass
+                drag: prefabRb.linearDamping
             );
-            trajectoryPredictor.PredictTrajectory(projectileProperties);
+            var weaponProperties = new WeaponProperties(
+                startTransform.forward,
+                GetStartPosition()
+            );
+            trajectoryPredictor.PredictTrajectory(weaponProperties, projectileProperties);
 
             if (Mouse.current != null && Mouse.current.leftButton.isPressed) {
                 var thrownObject = Instantiate(prefabRb, GetStartPosition(), Quaternion.identity);

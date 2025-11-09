@@ -6,6 +6,7 @@ using Core.Runtime.Service.Input;
 using Extensions.FSM;
 using Gameplay.Runtime.Player.Animation;
 using Gameplay.Runtime.Player.Camera;
+using Gameplay.Runtime.Player.Combat;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -18,10 +19,11 @@ namespace Gameplay.Runtime {
         #region fields
 
         [Header("References")]
-        // TODO: Refactor InputReader
         [field: SerializeField, Required] public InputReader InputReader { get; private set; }
         [field: SerializeField, Required] public PlayerCameraControls PlayerCameraControls { get; private set; }
         [field: SerializeField, Required] public PlayerAnimatorController AnimatorController { get; private set; }
+        [field: SerializeField, Required] public PlayerWeaponStash WeaponStash { get; private set; }
+        [field: SerializeField, Required] public PlayerWeaponController WeaponController { get; private set; }
         [SerializeField, Required] Transform modelRoot;
         
         public AuthorityEntity AuthorityEntity { get; private set; }
