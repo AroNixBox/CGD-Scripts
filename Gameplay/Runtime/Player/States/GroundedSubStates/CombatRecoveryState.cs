@@ -1,16 +1,17 @@
 ﻿using Cysharp.Threading.Tasks;
 using Extensions.FSM;
+using Gameplay.Runtime.Camera;
 using Gameplay.Runtime.Player;
 using Gameplay.Runtime.Player.Animation;
 using Gameplay.Runtime.Player.Camera;
+using Unity.Cinemachine;
 using UnityEngine;
 
 namespace Gameplay.Runtime.Player.States.GroundedSubStates {
     public class CombatRecoveryState : IState {
         // PlayerAnimatorController _animatorController;
-        PlayerCameraControls _cameraControls;
-        PlayerController _controller;
-        
+        readonly PlayerCameraControls _cameraControls;
+        readonly PlayerController _controller;
         public CombatRecoveryState(PlayerController controller) {
             _cameraControls = controller.PlayerCameraControls;
             _controller = controller;
@@ -19,7 +20,7 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
 
         public void OnEnter() {
             // TODO: Trigger Bullet Cam
-            _cameraControls.ResetCameras(); // Arena Cam, because highes Priority
+            _cameraControls.ResetControllableCameras(); // Arena Cam, because highes Priority
             _ = HardCodedExitTimeBuffer();
         }
         public void Tick(float deltaTime) { }
@@ -44,7 +45,12 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         }
 
         public void OnExit() {
+            _cameraControls.ResetBulletCamera();
+            
+            // Exit Condition
             _recoveryFinished = false;
+            
+            // Entry Condition for next Player Substatemachine
             _controller.AuthorityEntity.GiveNextAuthority();
         }
         public Color GizmoState() {

@@ -1,8 +1,10 @@
 ﻿using Core.Runtime.Service.Input;
 using Extensions.FSM;
+using Gameplay.Runtime.Camera;
 using Gameplay.Runtime.Player.Camera;
 using Gameplay.Runtime.Player.Combat;
 using Gameplay.Runtime.Player.Trajectory;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -12,9 +14,10 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         // readonly PlayerAnimatorController _animatorController;
         readonly InputReader _inputReader;
         readonly PlayerController _playerController;
-
+        
         readonly PlayerWeaponController _weaponController;
         readonly PlayerWeaponStash _weaponStash;
+        
         public CombatStanceState(PlayerController controller) {
             _cameraControls = controller.PlayerCameraControls;
             _inputReader = controller.InputReader;
@@ -27,7 +30,7 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
 
         public void OnEnter() {
             _inputReader.Fire += Attack;
-            _cameraControls.SwitchToCameraMode(PlayerCameraControls.CameraMode.FirstPerson);
+            _cameraControls.SwitchToControllableCameraMode(PlayerCameraControls.ECameraMode.FirstPerson);
         }
 
         public void Tick(float deltaTime) {
@@ -69,16 +72,15 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             var spawnedWeapon = _weaponStash.GetSpawnedWeapon();
             spawnedWeapon.transform.forward = activeCameraForward;
         }
-
-        // TODO: Right place? SRP? Maybe move into Player WeaponController?
-        
-
         void Attack() {
             // TODO:
             // If we wanna trigger an Animation
             // _animatorController.ChangeAnimationState(AnimationParameters.CastSpell);
-
-            _weaponController.FireWeapon();
+            
+            var projectile = _weaponController.FireWeapon();
+            _cameraControls.EnableBulletCamera(projectile.transform);
+            
+            // Exit Condition
             _playerController.AuthorityEntity.ResetAuthority();
         }
 

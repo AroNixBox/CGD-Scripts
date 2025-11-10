@@ -16,7 +16,7 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         }
 
         public void OnEnter() {
-            _cameraControls.SwitchToCameraMode(PlayerCameraControls.CameraMode.ThirdPerson);
+            _cameraControls.SwitchToControllableCameraMode(PlayerCameraControls.ECameraMode.ThirdPerson);
             _animatorController.ChangeAnimationState(AnimationParameters.Locomotion);
         }
 

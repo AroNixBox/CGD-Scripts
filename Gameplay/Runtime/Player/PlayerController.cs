@@ -9,6 +9,7 @@ using Gameplay.Runtime.Player.Combat;
 using Gameplay.Runtime.Player.States;
 using Gameplay.Runtime.Player.States.GroundedSubStates;
 using Sirenix.OdinInspector;
+using Unity.Cinemachine;
 using UnityEngine;
 
 namespace Gameplay.Runtime.Player {

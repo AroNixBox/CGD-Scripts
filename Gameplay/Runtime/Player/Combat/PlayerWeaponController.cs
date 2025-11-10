@@ -34,7 +34,8 @@ namespace Gameplay.Runtime.Player.Combat {
             );
         }
         
-        public void FireWeapon() {
+        /// <returns>The projectile that is fired</returns>
+        public Rigidbody FireWeapon() {
             var currentWeaponData = _weaponStash.GetCurrentWeaponData();
             
             // Projectile
@@ -47,6 +48,7 @@ namespace Gameplay.Runtime.Player.Combat {
             
             var projectile = Instantiate(projectilePrefab, currentWeaponProperties.MuzzlePosition, Quaternion.identity);
             projectile.AddForce(currentWeaponProperties.ShootDirection * _projectileForce, ForceMode.Impulse);
+            return projectile;
         }
 
         public void IncreaseProjectileForce() {
