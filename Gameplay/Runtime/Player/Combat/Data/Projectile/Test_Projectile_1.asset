@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9222d854a77a4b10934d5a2d4128e692, type: 3}
   m_Name: Test_Projectile_1
   m_EditorClassIdentifier: AMBROSS.Gameplay.Runtime::Gameplay.Runtime.Player.Combat.ProjectileData
-  <ThrowForce>k__BackingField: 20
-  <Projectile>k__BackingField: {fileID: 8638315551780792586, guid: 4eafc553fa49b7f46822ebf9c7c79b71, type: 3}
+  <ImpactData>k__BackingField: {fileID: 11400000, guid: 3f0883f6cf5b4b54eafdbb8a0a1d0c37, type: 2}
+  <ProjectilePrefab>k__BackingField: {fileID: 8638315551780792586, guid: 4eafc553fa49b7f46822ebf9c7c79b71, type: 3}

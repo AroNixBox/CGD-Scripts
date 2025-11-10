@@ -1,7 +1,7 @@
 ﻿using Common.Runtime.Extensions;
 using UnityEngine;
 
-namespace Gameplay.Runtime._Scripts.Gameplay.Runtime {
+namespace Gameplay.Runtime.Player {
     public class ActiveRagdollAnimator : MonoBehaviour {
         public Transform[] animatedTransforms;
         public ConfigurableJoint[] joints;

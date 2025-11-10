@@ -2,7 +2,7 @@ using Common.Runtime;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace Gameplay.Runtime {
+namespace Gameplay.Runtime.Player.States {
     /// <summary>
     /// Check for Ground and make sure we adjust ourselfes properly
     /// </summary>
@@ -18,7 +18,7 @@ namespace Gameplay.Runtime {
         [SerializeField, Range(0f, 1f)] float stepHeightRatio = 0.05f;
         [SerializeField] float colliderHeight = 0.6f;
         [SerializeField] float colliderThickness = 0.27f;
-        [SerializeField] Vector3 colliderOffset = new(0f, 0.3f, 0f);
+        [SerializeField] Vector3 colliderOffset = new (0f, 0.3f, 0f);
 
         Rigidbody _rb;
         Transform _tr;

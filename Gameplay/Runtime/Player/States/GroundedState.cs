@@ -1,9 +1,10 @@
 ﻿using System;
 using Core.Runtime.Service.Input;
 using Extensions.FSM;
+using Gameplay.Runtime.Player.States.GroundedSubStates;
 using UnityEngine;
 
-namespace Gameplay.Runtime {
+namespace Gameplay.Runtime.Player.States {
     public class GroundedState : ISubStateMachine {
         readonly StateMachine _stateMachine;
         IState CurrentState => _stateMachine.GetCurrentState();

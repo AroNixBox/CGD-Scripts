@@ -1,4 +1,5 @@
 ﻿using Extensions.FSM;
+using Gameplay.Runtime.Player;
 using Gameplay.Runtime.Player.Animation;
 using UnityEngine;
 

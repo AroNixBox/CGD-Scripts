@@ -1,5 +1,4 @@
 using System;
-using Common.Runtime;
 using Common.Runtime.Extensions;
 using Core.Runtime.Authority;
 using Core.Runtime.Service.Input;
@@ -7,10 +6,12 @@ using Extensions.FSM;
 using Gameplay.Runtime.Player.Animation;
 using Gameplay.Runtime.Player.Camera;
 using Gameplay.Runtime.Player.Combat;
+using Gameplay.Runtime.Player.States;
+using Gameplay.Runtime.Player.States.GroundedSubStates;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace Gameplay.Runtime {
+namespace Gameplay.Runtime.Player {
     /// <summary>
     /// Calculates Momentum & Velocity based on the Player Input
     /// </summary>

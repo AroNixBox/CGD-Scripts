@@ -22,15 +22,15 @@ namespace Gameplay.Runtime.Player.Trajectory {
             _lineRenderer = GetComponent<LineRenderer>();
         }
 
-        public void PredictTrajectory(WeaponProperties weaponProperties, ProjectileProperties projectileProperties) {
-            var velocity = projectileProperties.InitialSpeed / projectileProperties.Mass *
+        public void PredictTrajectory(WeaponProperties weaponProperties, float projectileForce, float projectileMass, float projectileDrag) {
+            var velocity = projectileForce / projectileMass *
                            weaponProperties.ShootDirection;
             var position = weaponProperties.MuzzlePosition;
             
             _lineRenderer.positionCount = resolution;
 
             for (var i = 0; i < resolution; i++) {
-                velocity = CalculateNewVelocity(velocity, projectileProperties.Drag);
+                velocity = CalculateNewVelocity(velocity, projectileDrag);
                 var nextPosition = position + velocity * increment;
                 var overlap = Vector3.Distance(position, nextPosition) * rayOverlap;
                 _lineRenderer.SetPosition(i, position);

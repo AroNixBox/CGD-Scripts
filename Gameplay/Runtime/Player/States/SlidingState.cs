@@ -2,7 +2,7 @@
 using Gameplay.Runtime.Player.Animation;
 using UnityEngine;
 
-namespace Gameplay.Runtime {
+namespace Gameplay.Runtime.Player.States {
     public class SlidingState : IState {
         readonly PlayerController _controller;
         readonly PlayerAnimatorController _animatorController;

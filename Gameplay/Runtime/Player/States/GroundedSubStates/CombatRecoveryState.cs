@@ -1,10 +1,11 @@
 ﻿using Cysharp.Threading.Tasks;
 using Extensions.FSM;
+using Gameplay.Runtime.Player;
 using Gameplay.Runtime.Player.Animation;
 using Gameplay.Runtime.Player.Camera;
 using UnityEngine;
 
-namespace Gameplay.Runtime {
+namespace Gameplay.Runtime.Player.States.GroundedSubStates {
     public class CombatRecoveryState : IState {
         // PlayerAnimatorController _animatorController;
         PlayerCameraControls _cameraControls;
