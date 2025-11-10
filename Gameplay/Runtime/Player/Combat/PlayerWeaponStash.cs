@@ -37,8 +37,8 @@ namespace Gameplay.Runtime.Player.Combat {
 
         int GetPreviousIndex() =>
             _currentWeaponIndex == 0
-                ? _currentWeaponIndex - 1
-                : weapons.Length - 1;
+                ? weapons.Length - 1
+                : _currentWeaponIndex - 1;
 
         public enum EWeaponIndex {
             Next,
@@ -63,6 +63,6 @@ namespace Gameplay.Runtime.Player.Combat {
             _spawnedWeapon = Instantiate(currentWeaponPrefab, weaponSocket);
         }
 
-        void DespawnSelectedWeapon() => Destroy(_spawnedWeapon);
+        void DespawnSelectedWeapon() => Destroy(_spawnedWeapon.gameObject);
     }
 }

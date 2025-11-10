@@ -1,31 +1,51 @@
-﻿using Extensions.FSM;
+﻿using Cysharp.Threading.Tasks;
+using Extensions.FSM;
 using Gameplay.Runtime.Player.Animation;
 using Gameplay.Runtime.Player.Camera;
 using UnityEngine;
 
 namespace Gameplay.Runtime {
     public class CombatRecoveryState : IState {
-        PlayerAnimatorController _animatorController;
+        // PlayerAnimatorController _animatorController;
         PlayerCameraControls _cameraControls;
+        PlayerController _controller;
         
         public CombatRecoveryState(PlayerController controller) {
             _cameraControls = controller.PlayerCameraControls;
-            _animatorController = controller.AnimatorController;
+            _controller = controller;
+            //_animatorController = controller.AnimatorController;
         }
 
         public void OnEnter() {
-            _cameraControls.ResetCameras();
+            // TODO: Trigger Bullet Cam
+            _cameraControls.ResetCameras(); // Arena Cam, because highes Priority
+            _ = HardCodedExitTimeBuffer();
         }
         public void Tick(float deltaTime) { }
+
+        bool _recoveryFinished;
         /// <summary>
         /// Waiting for the Attack Animation to finish before going back to the non-auth state.
         /// Because Non-Auth State will switch to T-Pose and this would cancel the Attack Animation abruptly.
         /// </summary>
         public bool IsRecoveryFinished() {
-            return !_animatorController.IsInTransition(AnimationParameters.GetAnimationLayer(0)) &&
-                   _animatorController.IsCurrentAnimationFinished(0.9f, 0);
+            // TODO:
+            // If we would want to wait for an Animation:
+            // return !_animatorController.IsInTransition(AnimationParameters.GetAnimationLayer(0)) &
+            //              _animatorController.IsCurrentAnimationFinished(0.9f, 0);
+            
+            return _recoveryFinished;
         }
-        public void OnExit() { }
+
+        async UniTask HardCodedExitTimeBuffer() {
+            await UniTask.WaitForSeconds(3);
+            _recoveryFinished = true;
+        }
+
+        public void OnExit() {
+            _recoveryFinished = false;
+            _controller.AuthorityEntity.GiveNextAuthority();
+        }
         public Color GizmoState() {
             return Color.cyan;
         }

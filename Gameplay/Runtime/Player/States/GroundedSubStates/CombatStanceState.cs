@@ -36,10 +36,10 @@ namespace Gameplay.Runtime {
             AimWeapon();
             PredictTrajectory();
             
+            // TODO: Do via InputAsset
             if(Mouse.current == null)
                 return;
                     
-            // TODO: Do via InputAsset
             var scrollValue = Mouse.current.scroll.ReadValue();
             if(scrollValue.y > 0)
                 _weaponStash.SelectWeapon(PlayerWeaponStash.EWeaponIndex.Next);
@@ -75,14 +75,6 @@ namespace Gameplay.Runtime {
 
             _weaponController.FireWeapon();
             _playerController.AuthorityEntity.ResetAuthority();
-            _ = NextPlayer();
-        }
-
-        // TODO: This state should END the moment the player shoots, the timer should be in the CombatRecoveryState...
-        // TODO: Switching to the next player should not be time based, but rather called from the ability we cast
-        async UniTask NextPlayer() {
-            await UniTask.Delay(5000); // Placeholder for spell cast duration
-            _playerController.AuthorityEntity.GiveNextAuthority();
         }
 
         public void OnExit() {
