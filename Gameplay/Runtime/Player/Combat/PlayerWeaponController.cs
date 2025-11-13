@@ -1,4 +1,5 @@
-﻿using Gameplay.Runtime.Player.Trajectory;
+﻿using System;
+using Gameplay.Runtime.Player.Trajectory;
 using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Combat {
@@ -29,13 +30,13 @@ namespace Gameplay.Runtime.Player.Combat {
             TrajectoryPredictor.Instance.PredictTrajectory(
                 spawnedWeaponData.GetWeaponProperties(),
                 _projectileForce, 
-                currentProjectileData.ProjectilePrefab.mass,
-                currentProjectileData.ProjectilePrefab.linearDamping
+                currentProjectileData.Mass,
+                currentProjectileData.Drag
             );
         }
         
         /// <returns>The projectile that is fired</returns>
-        public Rigidbody FireWeapon() {
+        public Projectile FireWeapon(Action onProjectileExpired) {
             var currentWeaponData = _weaponStash.GetCurrentWeaponData();
             
             // Projectile
@@ -47,7 +48,7 @@ namespace Gameplay.Runtime.Player.Combat {
             var currentWeaponProperties = spawnedWeapon.GetWeaponProperties();
             
             var projectile = Instantiate(projectilePrefab, currentWeaponProperties.MuzzlePosition, Quaternion.identity);
-            projectile.AddForce(currentWeaponProperties.ShootDirection * _projectileForce, ForceMode.Impulse);
+            projectile.Init(projectileData.Mass, projectileData.Drag, _projectileForce, currentWeaponProperties.ShootDirection, onProjectileExpired);
             return projectile;
         }
 

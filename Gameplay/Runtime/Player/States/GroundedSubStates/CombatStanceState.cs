@@ -13,7 +13,7 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         readonly PlayerCameraControls _cameraControls;
         // readonly PlayerAnimatorController _animatorController;
         readonly InputReader _inputReader;
-        readonly PlayerController _playerController;
+        readonly PlayerController _controller;
         
         readonly PlayerWeaponController _weaponController;
         readonly PlayerWeaponStash _weaponStash;
@@ -21,7 +21,7 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         public CombatStanceState(PlayerController controller) {
             _cameraControls = controller.PlayerCameraControls;
             _inputReader = controller.InputReader;
-            _playerController = controller;
+            _controller = controller;
             // _animatorController = controller.AnimatorController;
 
             _weaponController = controller.WeaponController;
@@ -77,15 +77,23 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             // If we wanna trigger an Animation
             // _animatorController.ChangeAnimationState(AnimationParameters.CastSpell);
             
-            var projectile = _weaponController.FireWeapon();
+            // When the Projectile expires, we reset the Bullet Cam again and give Priority to the next player
+            var projectile = _weaponController.FireWeapon(EndTurn);
             _cameraControls.EnableBulletCamera(projectile.transform);
             
             // Exit Condition
-            _playerController.AuthorityEntity.ResetAuthority();
+            _controller.AuthorityEntity.ResetAuthority();
+        }
+
+        void EndTurn() {
+            _cameraControls.ResetBulletCamera();
+            // Entry Condition for next Player Substatemachine
+            _controller.AuthorityEntity.GiveNextAuthority();
         }
 
         public void OnExit() {
             _inputReader.Fire -= Attack;
+            _cameraControls.ResetControllableCameras();
             _weaponController.ResetProjectileForce();
             
             // Remove Trajectory Line

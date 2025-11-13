@@ -16,24 +16,20 @@ namespace Gameplay.Runtime.Player.States {
         // States
         readonly IState _combatStanceState;
         readonly IState _locomotionState;
-        readonly IState _awaitingAuthorityState;
 
         public GroundedState(PlayerController controller) {
             _inputReader = controller.InputReader;
             _controller = controller;
             
             _stateMachine = new StateMachine();
-            _awaitingAuthorityState = new AwaitingAuthorityState(controller);
+            IState awaitingAuthorityState = new AwaitingAuthorityState(controller);
             _combatStanceState = new CombatStanceState(controller);
             _locomotionState = new LocomotionState(controller);
-            var combatRecoveryState = new CombatRecoveryState(controller);
 
             // These two can not be Event based, since the status of authority can change outside of grounded
-            At(_awaitingAuthorityState, _locomotionState, HasAuthority);
-            At(_combatStanceState, combatRecoveryState, () => !HasAuthority());
-            
-            At(_locomotionState, _awaitingAuthorityState, () => !HasAuthority());
-            At(combatRecoveryState, _awaitingAuthorityState , () => combatRecoveryState.IsRecoveryFinished() && !HasAuthority());
+            At(awaitingAuthorityState, _locomotionState, HasAuthority);
+            At(_locomotionState, awaitingAuthorityState, () => !HasAuthority());
+            At(_combatStanceState, awaitingAuthorityState, () => !HasAuthority());
             
             return;
             
@@ -43,7 +39,8 @@ namespace Gameplay.Runtime.Player.States {
         bool HasAuthority() => _controller.AuthorityEntity.HasAuthority();
         
         public void OnEnter() {
-            _stateMachine.SetState(_awaitingAuthorityState);
+            // Set to locomotion state to force the grounded animation
+            _stateMachine.SetState(_locomotionState);
             
             _inputReader.Combat += OnCombat;
             _inputReader.StopCombat += OnStopCombat;

@@ -1,6 +1,4 @@
 ﻿using Extensions.FSM;
-using Gameplay.Runtime.Player;
-using Gameplay.Runtime.Player.Animation;
 using Gameplay.Runtime.Player.Camera;
 using UnityEngine;
 
@@ -9,14 +7,13 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
     /// Awaiting until authority is granted.
     /// </summary>
     public class AwaitingAuthorityState : IState {
-        readonly PlayerAnimatorController _animatorController;
-
+        PlayerCameraControls _cameraControls;
         public AwaitingAuthorityState(PlayerController controller) {
-            _animatorController = controller.AnimatorController;
+            _cameraControls = controller.PlayerCameraControls;
         }
 
         public void OnEnter() {
-            _animatorController.ChangeAnimationState(AnimationParameters.TPose);
+            _cameraControls.ResetControllableCameras();
         }
         public void Tick(float deltaTime) { }
         public void OnExit() { }

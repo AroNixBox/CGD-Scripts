@@ -13,4 +13,6 @@ MonoBehaviour:
   m_Name: Test_Projectile_1
   m_EditorClassIdentifier: AMBROSS.Gameplay.Runtime::Gameplay.Runtime.Player.Combat.ProjectileData
   <ImpactData>k__BackingField: {fileID: 11400000, guid: 3f0883f6cf5b4b54eafdbb8a0a1d0c37, type: 2}
-  <ProjectilePrefab>k__BackingField: {fileID: 8638315551780792586, guid: 4eafc553fa49b7f46822ebf9c7c79b71, type: 3}
+  <ProjectilePrefab>k__BackingField: {fileID: 4779192440287191868, guid: 4eafc553fa49b7f46822ebf9c7c79b71, type: 3}
+  <Mass>k__BackingField: 1
+  <Drag>k__BackingField: 0

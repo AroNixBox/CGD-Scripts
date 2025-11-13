@@ -7,7 +7,8 @@ namespace Gameplay.Runtime.Player.Combat {
     public class ProjectileData: ScriptableObject {
         // TODO: ShotPattern (How many are fired, etc..)
         [field: SerializeField][Required] public ProjectileImpactData ImpactData { get; private set; }
-        // TODO: ThrowForce should be able to be adjusted by Player
-        [field: SerializeField][Required] public Rigidbody ProjectilePrefab { get; private set; }
+        [field: SerializeField][Required] public Projectile ProjectilePrefab { get; private set; }
+        [field: SerializeField] [Required] public float Mass { get; private set; } = 1;
+        [field: SerializeField][Required] public float Drag { get; private set; }
     }
 }
