@@ -10,13 +10,6 @@ namespace Gameplay.Runtime.Player.Combat {
 
         Weapon _spawnedWeapon;
 
-        void Start() {
-            if(weapons.Length == 0)
-                throw new UnassignedReferenceException("Weapons Array not assigned");
-            
-            SpawnSelectedWeapon();
-        }
-
         public void SelectWeapon(EWeaponIndex weaponIndex) {
             if (weapons.Length is 0 or 1)
                 return;
@@ -57,11 +50,12 @@ namespace Gameplay.Runtime.Player.Combat {
             return _spawnedWeapon;
         }
 
-        void SpawnSelectedWeapon() {
+        public void SpawnSelectedWeapon() {
             var currentWeaponPrefab = GetCurrentWeaponData().Weapon;
             _spawnedWeapon = Instantiate(currentWeaponPrefab, weaponSocket);
+            _spawnedWeapon.Init(GetCurrentWeaponData());
         }
 
-        void DespawnSelectedWeapon() => Destroy(_spawnedWeapon.gameObject);
+        public void DespawnSelectedWeapon() => _spawnedWeapon.Dispose();
     }
 }

@@ -9,7 +9,6 @@ using Gameplay.Runtime.Player.Combat;
 using Gameplay.Runtime.Player.States;
 using Gameplay.Runtime.Player.States.GroundedSubStates;
 using Sirenix.OdinInspector;
-using Unity.Cinemachine;
 using UnityEngine;
 
 namespace Gameplay.Runtime.Player {
@@ -25,7 +24,6 @@ namespace Gameplay.Runtime.Player {
         [field: SerializeField, Required] public PlayerCameraControls PlayerCameraControls { get; private set; }
         [field: SerializeField, Required] public PlayerAnimatorController AnimatorController { get; private set; }
         [field: SerializeField, Required] public PlayerWeaponStash WeaponStash { get; private set; }
-        [field: SerializeField, Required] public PlayerWeaponController WeaponController { get; private set; }
         [SerializeField, Required] Transform modelRoot;
         
         public AuthorityEntity AuthorityEntity { get; private set; }

@@ -15,7 +15,6 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         readonly InputReader _inputReader;
         readonly PlayerController _controller;
         
-        readonly PlayerWeaponController _weaponController;
         readonly PlayerWeaponStash _weaponStash;
         
         public CombatStanceState(PlayerController controller) {
@@ -24,32 +23,35 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             _controller = controller;
             // _animatorController = controller.AnimatorController;
 
-            _weaponController = controller.WeaponController;
             _weaponStash = controller.WeaponStash;
         }
 
         public void OnEnter() {
             _inputReader.Fire += Attack;
             _cameraControls.SwitchToControllableCameraMode(PlayerCameraControls.ECameraMode.FirstPerson);
+            _weaponStash.SpawnSelectedWeapon();
         }
 
         public void Tick(float deltaTime) {
             SwitchWeapon();
-            ChangeProjectileForce();
+            var currentWeapon = _weaponStash.GetSpawnedWeapon();
+            if(currentWeapon != null)
+                ChangeProjectileForce(currentWeapon);
             AimWeapon();
-            _weaponController.PredictTrajectory();
+            if(currentWeapon != null)
+                currentWeapon.PredictTrajectory();
         }
 
         // TODO: Do via InputAsset
-        void ChangeProjectileForce() {
+        void ChangeProjectileForce(Weapon currentWeapon) {
             if(Mouse.current == null)
                 return;
             var scrollValueX = Mouse.current.scroll.ReadValue().x;
             
             if (scrollValueX > 0)
-                _weaponController.IncreaseProjectileForce();
+                currentWeapon.IncreaseProjectileForce();
             else if (scrollValueX < 0)
-                _weaponController.DecreaseProjectileForce();
+                currentWeapon.DecreaseProjectileForce();
         }
 
         // TODO: Do via InputAsset
@@ -64,7 +66,6 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
                 _weaponStash.SelectWeapon(PlayerWeaponStash.EWeaponIndex.Previous);
         }
 
-
         // Weapon Fwd = Camera Fwd
         void AimWeapon() {
             var firstPersonCamera = _cameraControls.GetActiveCameraTransform();
@@ -76,9 +77,10 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             // TODO:
             // If we wanna trigger an Animation
             // _animatorController.ChangeAnimationState(AnimationParameters.CastSpell);
-            
+
+            var currentWeapon = _weaponStash.GetSpawnedWeapon();
             // When the Projectile expires, we reset the Bullet Cam again and give Priority to the next player
-            var projectile = _weaponController.FireWeapon(EndTurn);
+            var projectile = currentWeapon.FireWeapon(EndTurn);
             _cameraControls.EnableBulletCamera(projectile.transform);
             
             // Exit Condition
@@ -94,7 +96,7 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         public void OnExit() {
             _inputReader.Fire -= Attack;
             _cameraControls.ResetControllableCameras();
-            _weaponController.ResetProjectileForce();
+            _weaponStash.DespawnSelectedWeapon();
             
             // Remove Trajectory Line
             if (TrajectoryPredictor.Instance == null) {
