@@ -30,8 +30,8 @@ namespace Gameplay.Runtime.Player.Combat {
             TrajectoryPredictor.Instance.PredictTrajectory(
                 spawnedWeaponData.GetWeaponProperties(),
                 _projectileForce, 
-                currentProjectileData.Mass,
-                currentProjectileData.Drag
+                currentProjectileData.mass,
+                currentProjectileData.drag
             );
         }
         
@@ -41,14 +41,14 @@ namespace Gameplay.Runtime.Player.Combat {
             
             // Projectile
             var projectileData = currentWeaponData.ProjectileData;
-            var projectilePrefab = projectileData.ProjectilePrefab;
+            var projectilePrefab = projectileData.projectilePrefab;
             
             // Spawned Weapon
             var spawnedWeapon = _weaponStash.GetSpawnedWeapon();
             var currentWeaponProperties = spawnedWeapon.GetWeaponProperties();
             
             var projectile = Instantiate(projectilePrefab, currentWeaponProperties.MuzzlePosition, Quaternion.identity);
-            projectile.Init(projectileData.Mass, projectileData.Drag, _projectileForce, currentWeaponProperties.ShootDirection, onProjectileExpired);
+            projectile.Init(projectileData.mass, projectileData.drag, _projectileForce, currentWeaponProperties.ShootDirection, onProjectileExpired, currentWeaponData.ProjectileData.impactData);
             return projectile;
         }
 
