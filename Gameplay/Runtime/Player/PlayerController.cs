@@ -65,7 +65,7 @@ namespace Gameplay.Runtime.Player {
         
         StateMachine _stateMachine;
 
-        Vector3 _momentum, _savedVelocity, _savedMovementVelocity;
+        Vector3 _momentum, _savedVelocity, _savedMovementVelocity, _externalForces;
         public event Action<Vector3> OnLand = delegate { }; // TODO: Call when entering Grounded State
         
         #endregion
@@ -193,9 +193,11 @@ namespace Gameplay.Runtime.Player {
                 ? _tr.localToWorldMatrix * _momentum 
                 : _momentum;
             
+            
             // Use the extended sensor range if we are grounded
             var grounded = _stateMachine.GetCurrentState() is GroundedState or SlidingState or LandingState;
             _mover.SetExtendedSensorRange(grounded);
+            
             _mover.SetVelocity(velocity);
             
             _savedVelocity = velocity;
@@ -292,6 +294,9 @@ namespace Gameplay.Runtime.Player {
             return direction.magnitude > 1f 
                 ? direction.normalized
                 : direction;
+        }
+        public void ApplyExternalForce(Vector3 force) {
+            _momentum += force;
         }
         
         void OnDrawGizmos() {

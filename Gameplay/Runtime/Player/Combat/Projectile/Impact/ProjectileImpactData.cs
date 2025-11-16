@@ -1,17 +1,12 @@
 ﻿using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Gameplay.Runtime.Player.Combat {
     [CreateAssetMenu(menuName = "Player/Combat/Projectile Impact Data")]
     public class ProjectileImpactData : ScriptableObject {
-        [SerializeField] uint aoeRadius = 1;
-        public uint GetAOERadius() => aoeRadius;
-        
-        [Tooltip("Impacts Damage & Physics")] 
-        [SerializeField] AnimationCurve dropOffCurve;
-        public AnimationCurve GetDropOffCurve() => dropOffCurve;
-        
+        [Header("Settings")]
         [EnumToggleButtons][SerializeField] 
         EProjectileActionTrigger projectileActionTrigger;
         public EProjectileActionTrigger GetProjectileActionTrigger() => projectileActionTrigger;
@@ -33,20 +28,17 @@ namespace Gameplay.Runtime.Player.Combat {
 
             return projectileActionCountdown;
         }
-    
-        // TODO:
-        // [Header("Physical Impact")]
-        // [field: SerializeField] public float ExplosionForce { get; private set; }
-        // [field: SerializeField] public float ExplosionUpwardModifier { get; private set; }
 
-        [SerializeField] float maximumDamage;
-        public float GetMaximumDamage() => maximumDamage;
+        [SerializeReference, SerializeField][InlineProperty, HideLabel, BoxGroup("Impact Strategy")] public IImpactStrategy impactStrategy;
+        public IImpactStrategy GetImpactStrategy() => impactStrategy;
+
+        [Header("Effects")]
+        [InfoBox("No Effects? Leave Fields empty")]
+        [SerializeField] GameObject impactVfx;
+        public GameObject GetImpactVfx() => impactVfx;
+        [SerializeField] AudioClip impactSfx;
+        public AudioClip GetImpactSfx() => impactSfx;
 
         // ProjectileAction = Damage, Apply Force, VFX & Sfx
-
-        // TODO: Implement
-        // [field: SerializeField] public float DropoffBeginDistance { get; private set; }
-        // [field: SerializeField] public float DropoffEndDistance { get; private set; }
-        // [field: SerializeField] public float DistanceMultiplierValue { get; private set; }
     }
 }

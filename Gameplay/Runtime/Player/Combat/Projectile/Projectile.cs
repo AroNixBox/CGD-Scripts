@@ -1,6 +1,5 @@
 using System;
 using Common.Runtime;
-using Common.Runtime.Interfaces;
 using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Combat {
@@ -34,7 +33,7 @@ namespace Gameplay.Runtime.Player.Combat {
                 // TODO: If pool reuse old Timer and reassign initialTime
                 _projectileActionTimer = new CountdownTimer(impactData.GetProjectileActionCountdown());
                 _projectileActionTimer.Start();
-                _projectileActionTimer.OnTimerStop += ApplyDamage;
+                _projectileActionTimer.OnTimerStop += OnProjectileTimerActionComplete;
             }
             
             if (onCompleteAction == null) {
@@ -58,38 +57,46 @@ namespace Gameplay.Runtime.Player.Combat {
             if (!IsSingleCollision()) return;
             if(_hasImpacted) return;
             _hasImpacted = true;
-            
 
-            ApplyDamage();
+            // Impact Strategy
+            var impactStrategy = _impactData.GetImpactStrategy();
+            impactStrategy.OnImpact(transform.position);
+            
             // TODO: Force
-            // TODO: VFX & SFX w/callback for effect ended
-        }
-        
-        void ApplyDamage() {
-            var aoeRadius = _impactData.GetAOERadius();
-            var overlappedObjects = Physics.OverlapSphere(transform.position, aoeRadius);
             
-            foreach (var overlappedObject in overlappedObjects) {
-                if (!overlappedObject.TryGetComponent(out IDamageable damageable))
-                    continue;
-                
-                // TODO: This only uses the Center-Point of the overlaped object and should instead use the collisionpoint
-                var distanceObjectFromCenter = Vector3.Distance(transform.position, overlappedObject.transform.position);
-                // Bring in relation 0-1 based ont he max radius
-                // Clamp is needed because objects origin can be further away than aoeRadius due to using Origin instead of collision point
-                var distanceScore = Mathf.Clamp(distanceObjectFromCenter / aoeRadius, 0, 1); 
-                var damageScore = _impactData.GetDropOffCurve().Evaluate(distanceScore); 
-                var damage = _impactData.GetMaximumDamage() * damageScore;
+            // Sfx
+            var impactSfx = _impactData.GetImpactSfx();
+            PlayImpactSound(impactSfx);
 
-                if (damageable is MonoBehaviour damageableMB) {
-                    Debug.Log($"Dealing {damage} Damage to {damageableMB.gameObject.name}");
-                }
-
-                damageable.TakeDamage(damage);
-            }
+            // Vfx
+            var impactVfx = _impactData.GetImpactVfx();
+            CreateImpactEffect(impactVfx);
             
             Dispose();
-            Destroy(gameObject); // TODO Pool
+        }
+
+        // TODO: Audio Manager
+        void PlayImpactSound(AudioClip clip) {
+            if (clip == null)
+                return;
+            
+            if (clip != null)
+                AudioSource.PlayClipAtPoint(clip, transform.position);
+        }
+        
+        // TODO: Effect-Manger & Pool?
+        void CreateImpactEffect(GameObject effectPrefab) {
+            if (effectPrefab == null)
+                return;
+            
+            if (effectPrefab != null)
+                Instantiate(effectPrefab, transform.position, Quaternion.identity);
+        }
+
+        // Called when Projectile-Action that is triggered by timer, timer = 0
+        void OnProjectileTimerActionComplete() {
+            var impactStrategy = _impactData.GetImpactStrategy();
+            impactStrategy.OnImpact(transform.position);
         }
 
         void Update() {
@@ -108,7 +115,8 @@ namespace Gameplay.Runtime.Player.Combat {
 
             // Null when using a different
             if (_projectileActionTimer != null) {
-                _projectileActionTimer.OnTimerStop -= ApplyDamage;
+                // TODO:
+                // _projectileActionTimer.OnTimerStop -= ApplyDamage;
                 _projectileActionTimer.Reset();
             } else if (IsCountdown()) {
                 Debug.LogError("Selected was Projectile-Type Countdown but Projectile Action Trigger is null, did you change the Projectile-Action-Trigger in Runtime?");
@@ -127,3 +135,5 @@ namespace Gameplay.Runtime.Player.Combat {
                                     ProjectileImpactData.EProjectileActionTrigger.Countdown;
     }
 }
+
+
