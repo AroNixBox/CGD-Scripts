@@ -11,7 +11,8 @@ namespace Core.Runtime.Authority {
         
         public bool HasAuthority() {
             if (_authorityManager == null) {
-                Debug.LogError("AuthorityEntity not initialized properly");
+                // Awaiting Init
+                // Debug.LogError("AuthorityEntity not initialized properly");
                 return false;
             }
             

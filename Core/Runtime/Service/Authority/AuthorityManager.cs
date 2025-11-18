@@ -17,9 +17,9 @@ namespace Core.Runtime.Authority {
          * Cache the last owner to validate requests during the "no authority" period
          * (between ResetAuthority() and the next SetAuthority())
          * => Because after a player made his move there is a Bulletcam where no one has authority */
-        
 
-        void Start() {
+
+        public void Init() {
             authorityEntities.ForEach(entity => entity.Initialize(this));
             SetAuthorityToFirstPlayer();
         }
