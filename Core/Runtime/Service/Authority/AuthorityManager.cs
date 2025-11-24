@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using Common.Runtime._Scripts.Common.Runtime.Extensions;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Core.Runtime.Authority {
@@ -10,74 +12,55 @@ namespace Core.Runtime.Authority {
     public class AuthorityManager : MonoBehaviour {
         [SerializeField] List<AuthorityEntity> authorityEntities = new();
         [SerializeField] int startIndex;
+        public event Action OnLastEntityRemaining = delegate { };
         AuthorityEntity _currentAuthority;
-        AuthorityEntity _lastKnownAuthority;
-        
-        /*
-         * Cache the last owner to validate requests during the "no authority" period
-         * (between ResetAuthority() and the next SetAuthority())
-         * => Because after a player made his move there is a Bulletcam where no one has authority */
-
+        // Track the last authority for GiveNextAuthority(), bec. _currentAuthority gets reset when in Bullet-Cam time
+        int _nextAuthorityIndex;
 
         public void Init() {
             authorityEntities.ForEach(entity => entity.Initialize(this));
             SetAuthorityToFirstPlayer();
-        }
 
-        void SetAuthorityToFirstPlayer() {
-            if (authorityEntities.IsNullOrEmpty(true)) return;
-            if (!authorityEntities.DoesIndexExist(startIndex, true)) return;
+            return;
             
-            SetAuthorityTo(authorityEntities[startIndex], null, true);
-        }
-
-        /// <summary>
-        /// Sets the authority to a new player.
-        /// </summary>
-        /// <param name="newAuthorityEntity">The player to grant authority to</param>
-        /// <param name="bypassValidation">If true, skips checking if the request comes from the actual authority</param>
-        void SetAuthorityTo(AuthorityEntity newAuthorityEntity, AuthorityEntity authoritySetRequester,bool bypassValidation = false) {
-            if (newAuthorityEntity == null) {
-                Debug.LogError("AuthorityManager: Cannot set authority to null player.");
-                return;
-            }
+            void SetAuthorityToFirstPlayer() {
+                if (authorityEntities.IsNullOrEmpty(true)) return;
+                if (!authorityEntities.DoesIndexExist(startIndex, true)) return;
             
-            if (!authorityEntities.Contains(newAuthorityEntity)) {
-                Debug.LogError("AuthorityManager: Tried to set authority to a player that is not registered.");
-                return;
+                GiveNextEntityAuthority();
             }
-
-            // Validate that only the last owner can trigger authority changes
-            if (!bypassValidation && !IsLastKnownOwner(authoritySetRequester)) {
-                Debug.LogError($"Only the last authority ({_lastKnownAuthority?.name}) can set authority, not {authoritySetRequester?.name}.");
-                return;
-            }
-
-            _lastKnownAuthority = newAuthorityEntity;
-            _currentAuthority = newAuthorityEntity;
         }
+        
 
         /// <summary>
         /// Advances to the next player in the list.
         /// </summary>
-        /// <param name="currentAuthorityEntity">The player currently requesting the turn advance</param>
-        public void GiveNextEntityAuthority(AuthorityEntity currentAuthorityEntity) {
-            if (currentAuthorityEntity == null) {
-                Debug.LogError("AuthorityManager: Current player is null.");
-                return;
-            }
-            
+        public void GiveNextEntityAuthority() {
+            if (_nextAuthorityIndex == -1) return; // Dont go in
             if (authorityEntities.IsNullOrEmpty(true)) return;
+            // Does Index even exist?
+            if (_nextAuthorityIndex >= authorityEntities.Count) return;
             
-            if (!authorityEntities.Contains(currentAuthorityEntity)) {
-                Debug.LogError("AuthorityManager: Current player is not in the players list.");
-                return;
+            var nextPlayer = authorityEntities[_nextAuthorityIndex];
+            GiveAuthorityTo(nextPlayer);
+            
+            return;
+
+            void GiveAuthorityTo(AuthorityEntity newAuthorityEntity) {
+                if (newAuthorityEntity == null) {
+                    Debug.LogError("AuthorityManager: Cannot set authority to null player.");
+                    return;
+                }
+            
+                if (!authorityEntities.Contains(newAuthorityEntity)) {
+                    Debug.LogError("AuthorityManager: Tried to set authority to a player that is not registered.");
+                    return;
+                }
+
+                var currentIndex = authorityEntities.IndexOf(newAuthorityEntity);
+                _nextAuthorityIndex = (currentIndex + 1) % authorityEntities.Count;
+                _currentAuthority = newAuthorityEntity;
             }
-            
-            var currentIndex = authorityEntities.IndexOf(currentAuthorityEntity);
-            var nextPlayer = authorityEntities[(currentIndex + 1) % authorityEntities.Count];
-            
-            SetAuthorityTo(nextPlayer, currentAuthorityEntity);
         }
 
         /// <summary>
@@ -91,26 +74,61 @@ namespace Core.Runtime.Authority {
                 return;
             }
             
-            // Validate that the player has current authority OR is the last known owner
-            // This allows ending turn even during the "transition period", where there is no current authority
-            if (!HasAuthority(authorityEntity) && !IsLastKnownOwner(authorityEntity)) {
-                Debug.LogWarning("AuthorityEntity requested end turn but does not have authority.");
-                return;
-            }
-
-            // Clear authority - entering the "transition period"
-            // _lastKnownOwner remains cached for validation
             _currentAuthority = null;
         }
-        
-        public bool HasAuthority(AuthorityEntity candidate) => ReferenceEquals(_currentAuthority, candidate);
 
-        /// <summary>
-        /// Checks if the given player was the last known authority owner.
-        /// Used for validation during the period between ResetAuthority and SetAuthority.
-        /// </summary>
-        bool IsLastKnownOwner(AuthorityEntity authorityEntity) {
-            return _lastKnownAuthority != null && ReferenceEquals(_lastKnownAuthority, authorityEntity);
+        [Button]
+        public void UnregisterEntity(int index) {
+            // Does index even exist?
+            if (index < 0 || index >= authorityEntities.Count) return;
+            
+            UnregisterEntity(authorityEntities[index]);
+        }
+
+        public void UnregisterEntity(AuthorityEntity authorityEntity) {
+            if (!ValidateEntityForUnregister(authorityEntity)) return;
+
+            var removedIndex = authorityEntities.IndexOf(authorityEntity);
+            var hadAuthority = HasAuthority(authorityEntity);
+    
+            authorityEntities.Remove(authorityEntity);
+            AdjustNextAuthorityIndex(removedIndex);
+            HandleGameEndCondition();
+            HandleAuthorityTransfer(hadAuthority);
+        }
+        bool ValidateEntityForUnregister(AuthorityEntity authorityEntity) {
+            if (authorityEntity == null) {
+                Debug.LogError("AuthorityEntity is null.");
+                return false;
+            }
+
+            return authorityEntities.Contains(authorityEntity);
+        }
+
+        void AdjustNextAuthorityIndex(int removedIndex) {
+            // Entity before next Index gets removed, shift index by 1 to the left
+            if (removedIndex < _nextAuthorityIndex && _nextAuthorityIndex > 0) {
+                _nextAuthorityIndex--;
+            }
+        }
+
+        void HandleGameEndCondition() {
+            if (authorityEntities.Count > 1) return;
+            
+            _nextAuthorityIndex = -1;
+            OnLastEntityRemaining.Invoke();
+            Debug.Log("<color=red>Last Entity has been Reached, Game Over?</color>");
+        }
+
+        void HandleAuthorityTransfer(bool hadAuthority) {
+            if (hadAuthority) {
+                _currentAuthority = null;
+                GiveNextEntityAuthority();
+            }
+        }
+
+        public bool HasAuthority(AuthorityEntity authorityEntity) {
+            return ReferenceEquals(_currentAuthority, authorityEntity);
         }
     }
 }

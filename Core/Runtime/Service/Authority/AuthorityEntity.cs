@@ -34,7 +34,7 @@ namespace Core.Runtime.Authority {
                 return;
             }
             
-            _authorityManager.GiveNextEntityAuthority(this);
+            _authorityManager.GiveNextEntityAuthority();
         }
     }
 }
