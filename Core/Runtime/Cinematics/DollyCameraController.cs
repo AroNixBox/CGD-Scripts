@@ -1,4 +1,5 @@
-using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -10,28 +11,20 @@ namespace Core.Runtime.Cinematics {
         [SerializeField, Required] CinemachineCamera cinemachineCamera;
         [SerializeField, Required] Transform cinemachineSplineEndPoint;
         [SerializeField, Required] CinemachineSplineDolly cinemachineSplineDolly;
-        public event Action OnDollyCameraTargetReached = delegate { };
-
+        
         const float MinimumDistance = 0.5f;
         const int CameraInactivePriority = 0;
-        bool _triggered;
-        bool _allowDollyStart;
 
-        public void InitDolly() {
-            _allowDollyStart = true;
-        }
-        
-        void FixedUpdate() {
-            if (!_allowDollyStart) return;
-            if (_triggered) return;
-            
-            cinemachineSplineDolly.CameraPosition += speed * Time.fixedDeltaTime;
-            if (Vector3.Distance(cinemachineCamera.transform.position, cinemachineSplineEndPoint.position) >
-                MinimumDistance) return;
-            
-            _triggered = true;
+        public async UniTask MoveDollyToTarget(CancellationToken token) {
+            while (!token.IsCancellationRequested &&
+                   Vector3.Distance(cinemachineCamera.transform.position, cinemachineSplineEndPoint.position) > MinimumDistance) {
+                cinemachineSplineDolly.CameraPosition += speed * Time.fixedDeltaTime;
+                await UniTask.WaitForFixedUpdate(token);
+            }
+
+            if (token.IsCancellationRequested) return;
+
             cinemachineCamera.Priority = CameraInactivePriority;
-            OnDollyCameraTargetReached?.Invoke();
         }
     }
 }
