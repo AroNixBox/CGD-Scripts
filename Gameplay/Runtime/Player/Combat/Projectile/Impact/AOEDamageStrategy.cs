@@ -1,5 +1,5 @@
 ﻿using System;
-using Common.Runtime.Interfaces;
+using Gameplay.Runtime.Interfaces;
 using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Combat {
