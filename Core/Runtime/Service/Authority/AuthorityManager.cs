@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Common.Runtime._Scripts.Common.Runtime.Extensions;
+using Core.Runtime.Service;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -12,7 +13,9 @@ namespace Core.Runtime.Authority {
     public class AuthorityManager : MonoBehaviour {
         [SerializeField] List<AuthorityEntity> authorityEntities = new();
         [SerializeField] int startIndex;
-        public event Action OnLastEntityRemaining = delegate { };
+        public event Action<AuthorityEntity> OnAuthorityAuthorityGained = delegate { }; // Start Turn
+        public event Action<AuthorityEntity> OnAuthorityAuthorityRevoked = delegate { }; // End Turn
+        public event Action<AuthorityEntity> OnLastEntityRemaining = delegate { }; // 
         AuthorityEntity _currentAuthority;
         // Track the last authority for GiveNextAuthority(), bec. _currentAuthority gets reset when in Bullet-Cam time
         int _nextAuthorityIndex;
@@ -31,10 +34,10 @@ namespace Core.Runtime.Authority {
             }
         }
         
-
         /// <summary>
         /// Advances to the next player in the list.
         /// </summary>
+        [Button, BoxGroup("Debug")]
         public void GiveNextEntityAuthority() {
             if (_nextAuthorityIndex == -1) return; // Dont go in
             if (authorityEntities.IsNullOrEmpty(true)) return;
@@ -59,7 +62,10 @@ namespace Core.Runtime.Authority {
 
                 var currentIndex = authorityEntities.IndexOf(newAuthorityEntity);
                 _nextAuthorityIndex = (currentIndex + 1) % authorityEntities.Count;
+                if (_currentAuthority != null)
+                    OnAuthorityAuthorityRevoked.Invoke(_currentAuthority);
                 _currentAuthority = newAuthorityEntity;
+                OnAuthorityAuthorityGained.Invoke(newAuthorityEntity);
             }
         }
 
@@ -73,11 +79,13 @@ namespace Core.Runtime.Authority {
                 Debug.LogError("AuthorityEntity is null.");
                 return;
             }
+            if (_currentAuthority != null)
+                OnAuthorityAuthorityRevoked.Invoke(_currentAuthority);
             
             _currentAuthority = null;
         }
 
-        [Button]
+        [Button, BoxGroup("Debug")]
         public void UnregisterEntity(int index) {
             // Does index even exist?
             if (index < 0 || index >= authorityEntities.Count) return;
@@ -113,10 +121,10 @@ namespace Core.Runtime.Authority {
         }
 
         void HandleGameEndCondition() {
-            if (authorityEntities.Count > 1) return;
+            if (authorityEntities.Count != 1) return;
             
             _nextAuthorityIndex = -1;
-            OnLastEntityRemaining.Invoke();
+            OnLastEntityRemaining.Invoke(authorityEntities[0]);
             Debug.Log("<color=red>Last Entity has been Reached, Game Over?</color>");
         }
 
