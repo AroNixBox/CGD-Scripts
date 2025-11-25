@@ -1,4 +1,5 @@
 ﻿using System;
+using Core.Runtime.Service;
 using Gameplay.Runtime.Player.Trajectory;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -16,9 +17,12 @@ namespace Gameplay.Runtime.Player.Combat {
         float _projectileForce;
         
         WeaponData _weaponData;
+        TrajectoryPredictor _trajectoryPredictor;
 
         public void Init(WeaponData weaponData) {
             _weaponData = weaponData;
+            if (!ServiceLocator.TryGet(out _trajectoryPredictor))
+                throw new NullReferenceException("Trajectory Projector not available via Service Locator");
         }
 
         public WeaponProperties GetWeaponProperties() {
@@ -28,20 +32,13 @@ namespace Gameplay.Runtime.Player.Combat {
             );
         }
         
-        public void PredictTrajectory() {
-            // TODO: Kill Singleton
-            if (TrajectoryPredictor.Instance == null) {
-                Debug.LogError("No TrajectoryPredictor in Scene");
-                return;
-            }
-
-            TrajectoryPredictor.Instance.PredictTrajectory(
+        public void PredictTrajectory() => 
+            _trajectoryPredictor.PredictTrajectory(
                 GetWeaponProperties(),
                 _projectileForce, 
                 _weaponData.ProjectileData.mass,
                 _weaponData.ProjectileData.drag
             );
-        }
         
         public void IncreaseProjectileForce() {
             _projectileForce += Time.deltaTime * projectileForceChangeMultiplier;

@@ -20,6 +20,10 @@ namespace Core.Runtime.Authority {
         // Track the last authority for GiveNextAuthority(), bec. _currentAuthority gets reset when in Bullet-Cam time
         int _nextAuthorityIndex;
 
+        void Awake() => ServiceLocator.Register(this);
+
+        void OnDestroy() => ServiceLocator.Unregister<AuthorityManager>();
+
         public void Init() {
             authorityEntities.ForEach(entity => entity.Initialize(this));
             SetAuthorityToFirstPlayer();

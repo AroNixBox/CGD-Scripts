@@ -1,10 +1,10 @@
-﻿using UnityEngine;
+﻿using System;
+using Core.Runtime.Service;
+using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Trajectory {
     [RequireComponent(typeof(LineRenderer))]
     public class TrajectoryPredictor : MonoBehaviour {
-        public static TrajectoryPredictor Instance;
-        
         [SerializeField] int resolution;
         [SerializeField, Range(0.01f, 0.5f), Tooltip("The time increment used to calculate the trajectory")]
         float increment = 0.025f;
@@ -14,13 +14,11 @@ namespace Gameplay.Runtime.Player.Trajectory {
         LineRenderer _lineRenderer;
 
         void Awake() {
-            if (Instance != null)
-                Destroy(this);
-            else
-                Instance = this;
-            
+            ServiceLocator.Register(this);
             _lineRenderer = GetComponent<LineRenderer>();
         }
+
+        void OnDestroy() => ServiceLocator.Unregister<TrajectoryPredictor>();
 
         public void PredictTrajectory(WeaponProperties weaponProperties, float projectileForce, float projectileMass, float projectileDrag) {
             var velocity = projectileForce / projectileMass *

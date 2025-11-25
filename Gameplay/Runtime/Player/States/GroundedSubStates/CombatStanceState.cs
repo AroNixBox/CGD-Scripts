@@ -1,10 +1,11 @@
-﻿using Core.Runtime.Service.Input;
+﻿using System;
+using Core.Runtime.Service;
+using Core.Runtime.Service.Input;
 using Extensions.FSM;
 using Gameplay.Runtime.Camera;
 using Gameplay.Runtime.Player.Camera;
 using Gameplay.Runtime.Player.Combat;
 using Gameplay.Runtime.Player.Trajectory;
-using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -14,15 +15,14 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         // readonly PlayerAnimatorController _animatorController;
         readonly InputReader _inputReader;
         readonly PlayerController _controller;
-        
         readonly PlayerWeaponStash _weaponStash;
+        TrajectoryPredictor _trajectoryPredictor;
         
         public CombatStanceState(PlayerController controller) {
             _cameraControls = controller.PlayerCameraControls;
             _inputReader = controller.InputReader;
             _controller = controller;
             // _animatorController = controller.AnimatorController;
-
             _weaponStash = controller.WeaponStash;
         }
 
@@ -99,12 +99,10 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             _weaponStash.DespawnSelectedWeapon();
             
             // Remove Trajectory Line
-            if (TrajectoryPredictor.Instance == null) {
-                Debug.LogError("No TrajectoryPredictor in Scene");
-            }
-            else {
-                TrajectoryPredictor.Instance.RemoveTrajectoryLine();
-            }
+            if(_trajectoryPredictor == null)
+                if (!ServiceLocator.TryGet(out _trajectoryPredictor))
+                    throw new NullReferenceException("Trajectory Projector not available via Service Locator");
+            _trajectoryPredictor.RemoveTrajectoryLine();
         }
         public Color GizmoState() {
             return Color.darkOrange;
