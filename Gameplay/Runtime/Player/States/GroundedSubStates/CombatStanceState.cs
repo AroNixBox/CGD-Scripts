@@ -2,12 +2,10 @@
 using Core.Runtime.Service;
 using Core.Runtime.Service.Input;
 using Extensions.FSM;
-using Gameplay.Runtime.Camera;
 using Gameplay.Runtime.Player.Camera;
 using Gameplay.Runtime.Player.Combat;
 using Gameplay.Runtime.Player.Trajectory;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace Gameplay.Runtime.Player.States.GroundedSubStates {
     public class CombatStanceState : IState {
@@ -28,12 +26,14 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
 
         public void OnEnter() {
             _inputReader.Fire += Attack;
+            _inputReader.NextGun += _weaponStash.SelectNextWeapon;
+            _inputReader.PreviousGun += _weaponStash.SelectPreviousWeapon;
+            
             _cameraControls.SwitchToControllableCameraMode(PlayerCameraControls.ECameraMode.FirstPerson);
             _weaponStash.SpawnSelectedWeapon();
         }
 
         public void Tick(float deltaTime) {
-            SwitchWeapon();
             var currentWeapon = _weaponStash.GetSpawnedWeapon();
             if(currentWeapon != null)
                 ChangeProjectileForce(currentWeapon);
@@ -42,28 +42,11 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
                 currentWeapon.PredictTrajectory();
         }
 
-        // TODO: Do via InputAsset
-        void ChangeProjectileForce(Weapon currentWeapon) {
-            if(Mouse.current == null)
-                return;
-            var scrollValueX = Mouse.current.scroll.ReadValue().x;
-            
-            if (scrollValueX > 0)
+        void ChangeProjectileForce(Weapon currentWeapon) { 
+            if (_inputReader.IsWeaponForceIncreasing)
                 currentWeapon.IncreaseProjectileForce();
-            else if (scrollValueX < 0)
+            else if (_inputReader.IsWeaponForceDecreasing)
                 currentWeapon.DecreaseProjectileForce();
-        }
-
-        // TODO: Do via InputAsset
-        void SwitchWeapon() {
-            if(Mouse.current == null)
-                return;
-            var scrollValueY = Mouse.current.scroll.ReadValue().y;
-            
-            if(scrollValueY > 0)
-                _weaponStash.SelectWeapon(PlayerWeaponStash.EWeaponIndex.Next);
-            else if(scrollValueY < 0)
-                _weaponStash.SelectWeapon(PlayerWeaponStash.EWeaponIndex.Previous);
         }
 
         // Weapon Fwd = Camera Fwd
@@ -94,6 +77,8 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         }
 
         public void OnExit() {
+            _inputReader.NextGun -= _weaponStash.SelectNextWeapon;
+            _inputReader.PreviousGun -= _weaponStash.SelectPreviousWeapon;
             _inputReader.Fire -= Attack;
             _cameraControls.ResetControllableCameras();
             _weaponStash.DespawnSelectedWeapon();

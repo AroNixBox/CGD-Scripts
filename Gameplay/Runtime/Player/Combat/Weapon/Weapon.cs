@@ -9,11 +9,6 @@ namespace Gameplay.Runtime.Player.Combat {
         [Tooltip("Bullet Spawn Point")]
         [SerializeField, Required] public Transform muzzlePoint;
         
-        // TODO: Data Object?
-        [SerializeField] int minProjectileForce = 0;
-        [SerializeField] int maxProjectileForce = 100;
-        [Tooltip("How fast does the projectile force with player inputs")] 
-        [SerializeField] int projectileForceChangeMultiplier = 1000;
         float _projectileForce;
         
         WeaponData _weaponData;
@@ -41,13 +36,13 @@ namespace Gameplay.Runtime.Player.Combat {
             );
         
         public void IncreaseProjectileForce() {
-            _projectileForce += Time.deltaTime * projectileForceChangeMultiplier;
-            _projectileForce = Mathf.Clamp(_projectileForce, minProjectileForce, maxProjectileForce);
+            _projectileForce += Time.deltaTime * _weaponData.ProjectileForceChangeMultiplier;
+            _projectileForce = Mathf.Clamp(_projectileForce, _weaponData.MinProjectileForce, _weaponData.MaxProjectileForce);
         }
 
         public void DecreaseProjectileForce() {
-            _projectileForce -= Time.deltaTime * projectileForceChangeMultiplier;
-            _projectileForce = Mathf.Clamp(_projectileForce, minProjectileForce, maxProjectileForce);
+            _projectileForce -= Time.deltaTime * _weaponData.ProjectileForceChangeMultiplier;
+            _projectileForce = Mathf.Clamp(_projectileForce, _weaponData.MinProjectileForce, _weaponData.MaxProjectileForce);
         }
         
         public Projectile FireWeapon(Action onProjectileExpired) {

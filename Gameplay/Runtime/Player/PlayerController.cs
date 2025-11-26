@@ -177,13 +177,15 @@ namespace Gameplay.Runtime.Player {
                     velocity = CalculateMovementVelocity();
                     if (velocity.magnitude > 0.1f) 
                         modelRoot.rotation = Quaternion.Slerp(modelRoot.rotation, Quaternion.LookRotation(velocity.normalized), Time.deltaTime * rotationSpeed);
-                }else if (currentSubState is CombatStanceState) {
-                    // Rotate the player model towards look direction
-                    var activeCamera = PlayerCameraControls.GetActiveCameraTransform();
-                    // Rotate towards active camera forward direction, ignoring vertical difference
-                    var lookDirection = Vector3.ProjectOnPlane(activeCamera.forward, _tr.up).normalized;
-                    modelRoot.rotation = Quaternion.Slerp(modelRoot.rotation, Quaternion.LookRotation(lookDirection), Time.deltaTime * rotationSpeed);
                 }
+                // If wed like to rotate the model from first person-mode
+                // else if (currentSubState is CombatStanceState) {
+                //     // Rotate the player model towards look direction
+                //     var activeCamera = PlayerCameraControls.GetActiveCameraTransform();
+                //     // Rotate towards active camera forward direction, ignoring vertical difference
+                //     var lookDirection = Vector3.ProjectOnPlane(activeCamera.forward, _tr.up).normalized;
+                //     modelRoot.rotation = Quaternion.Slerp(modelRoot.rotation, Quaternion.LookRotation(lookDirection), Time.deltaTime * rotationSpeed);
+                // }
             }
             
             

@@ -10,16 +10,22 @@ namespace Gameplay.Runtime.Player.Combat {
 
         Weapon _spawnedWeapon;
 
-        public void SelectWeapon(EWeaponIndex weaponIndex) {
+        public void SelectNextWeapon() {
             if (weapons.Length is 0 or 1)
                 return;
             
             DespawnSelectedWeapon();
-
-            _currentWeaponIndex = weaponIndex == EWeaponIndex.Next
-                ? GetNextIndex()
-                : GetPreviousIndex();
+            var nextIndex = GetNextIndex();
+            _currentWeaponIndex = nextIndex;
+            SpawnSelectedWeapon();
+        }
+        public void SelectPreviousWeapon() {
+            if (weapons.Length is 0 or 1)
+                return;
             
+            DespawnSelectedWeapon();
+            var previousIndex = GetPreviousIndex();
+            _currentWeaponIndex = previousIndex;
             SpawnSelectedWeapon();
         }
         int GetNextIndex() =>

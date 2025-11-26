@@ -21,6 +21,10 @@ namespace Core.Runtime.Service.Input {
         #region Player Map Shared Data
 
         public event UnityAction<Vector2> Move = delegate { };
+        public bool IsWeaponForceIncreasing => InputActions.Player.IncreaseWeaponForce.IsPressed();
+        public bool IsWeaponForceDecreasing => InputActions.Player.DecreaseWeaponForce.IsPressed();
+        public event UnityAction NextGun = delegate { };
+        public event UnityAction PreviousGun = delegate { };
         public Vector2 MoveDirection => InputActions.Player.Move.ReadValue<Vector2>();
         public event UnityAction<Vector2, bool> LookDirection = delegate { }; // Look Direction Changed & Input Device Mouse?
         public event UnityAction<bool> IsLooking = delegate { }; // Is the Player Currently trying to look around, Important due to controller deadzone when trying to look
@@ -59,7 +63,19 @@ namespace Core.Runtime.Service.Input {
             
             Fire.Invoke();
         }
-        
+        public void OnIncreaseWeaponForce(InputAction.CallbackContext context) { }
+        public void OnDecreaseWeaponForce(InputAction.CallbackContext context) { }
+        public void OnNextGun(InputAction.CallbackContext context) {
+            if(context.phase != InputActionPhase.Performed) { return; }
+            
+            NextGun.Invoke();
+        }
+        public void OnPreviousGun(InputAction.CallbackContext context) {
+            if(context.phase != InputActionPhase.Performed) { return; }
+            
+            PreviousGun.Invoke();
+        }
+
         // Placeholder
         public void OnCombat(InputAction.CallbackContext context) {
             if(context.phase != InputActionPhase.Performed) { return; }
