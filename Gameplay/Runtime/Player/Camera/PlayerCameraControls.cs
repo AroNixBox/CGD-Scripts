@@ -1,4 +1,5 @@
 ﻿using System;
+using Cysharp.Threading.Tasks;
 using Gameplay.Runtime.Camera;
 using Sirenix.OdinInspector;
 using Unity.Cinemachine;
@@ -14,12 +15,19 @@ namespace Gameplay.Runtime.Player.Camera {
         [Tooltip("Typically the ModelRoot that is actively rotated")]
         [SerializeField, Required] Transform rotationTarget;
         CinemachineTargetTracker _targetTracker;
+        CinemachineBrain _brain;
         
         const int HighPriority = 10;
         const int LowPriority = 0;
 
         void Awake() {
             _targetTracker = bulletCamera.GetComponent<CinemachineTargetTracker>(); // TODO: Cache
+        }
+
+        void Start() {
+            var mainCam = UnityEngine.Camera.main;
+            if (mainCam != null)
+                _brain = mainCam.GetComponent<CinemachineBrain>();
         }
 
         public Transform GetActiveCameraTransform() {
@@ -29,7 +37,7 @@ namespace Gameplay.Runtime.Player.Camera {
         }
         
         // TODO: Set the new camera forward to the old camera forward to avoid mismatch
-        public void SwitchToControllableCameraMode(ECameraMode mode) {
+        public async UniTask SwitchToControllableCameraMode(ECameraMode mode) {
             if (mode == ECameraMode.FirstPerson) {
                 firstPersonCamera.transform.forward = thirdPersonCamera.transform.forward;
                 SetCameraPriorities(firstPerson: HighPriority, thirdPerson: LowPriority);
@@ -39,7 +47,13 @@ namespace Gameplay.Runtime.Player.Camera {
                 SetCameraPriorities(firstPerson: LowPriority, thirdPerson: HighPriority);
             }
 
+            await UniTask.Yield(PlayerLoopTiming.PostLateUpdate);
+    
+            // Jetzt warte bis der Blend fertig ist
+            await UniTask.WaitUntil(() => !_brain.IsBlending);
+
             return;
+            
             void SetCameraPriorities(int firstPerson, int thirdPerson) {
                 firstPersonCamera.Priority = firstPerson;
                 thirdPersonCamera.Priority = thirdPerson;

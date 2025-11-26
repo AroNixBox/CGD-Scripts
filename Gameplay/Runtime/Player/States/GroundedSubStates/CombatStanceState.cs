@@ -1,6 +1,7 @@
 ﻿using System;
 using Core.Runtime.Service;
 using Core.Runtime.Service.Input;
+using Cysharp.Threading.Tasks;
 using Extensions.FSM;
 using Gameplay.Runtime.Player.Camera;
 using Gameplay.Runtime.Player.Combat;
@@ -29,7 +30,9 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             _inputReader.NextGun += _weaponStash.SelectNextWeapon;
             _inputReader.PreviousGun += _weaponStash.SelectPreviousWeapon;
             
-            _cameraControls.SwitchToControllableCameraMode(PlayerCameraControls.ECameraMode.FirstPerson);
+            _cameraControls.SwitchToControllableCameraMode(PlayerCameraControls.ECameraMode.FirstPerson).ContinueWith(
+                    () => _controller.VisualModel.gameObject.SetActive(false)
+                ).Forget();
             _weaponStash.SpawnSelectedWeapon();
         }
 
@@ -51,6 +54,7 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
 
         // Weapon Fwd = Camera Fwd
         void AimWeapon() {
+            // TODO: Move WeaponSlot with the rotation 
             var firstPersonCamera = _cameraControls.GetActiveCameraTransform();
             var activeCameraForward = firstPersonCamera.forward;
             var spawnedWeapon = _weaponStash.GetSpawnedWeapon();
@@ -82,7 +86,8 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             _inputReader.Fire -= Attack;
             _cameraControls.ResetControllableCameras();
             _weaponStash.DespawnSelectedWeapon();
-            
+            _controller.VisualModel.gameObject.SetActive(true);
+
             // Remove Trajectory Line
             if(_trajectoryPredictor == null)
                 if (!ServiceLocator.TryGet(out _trajectoryPredictor))

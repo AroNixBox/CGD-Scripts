@@ -25,6 +25,8 @@ namespace Gameplay.Runtime.Player {
         [field: SerializeField, Required] public PlayerAnimatorController AnimatorController { get; private set; }
         [field: SerializeField, Required] public PlayerWeaponStash WeaponStash { get; private set; }
         [SerializeField, Required] Transform modelRoot;
+        [SerializeField, Required] Transform visualModel;
+        public Transform VisualModel => visualModel;
         
         public AuthorityEntity AuthorityEntity { get; private set; }
 
