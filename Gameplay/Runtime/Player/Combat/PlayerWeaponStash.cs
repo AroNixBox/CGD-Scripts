@@ -1,4 +1,6 @@
+using System;
 using Sirenix.OdinInspector;
+using Sirenix.Utilities;
 using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Combat {
@@ -10,23 +12,36 @@ namespace Gameplay.Runtime.Player.Combat {
 
         Weapon _spawnedWeapon;
 
+        public event Action<WeaponData> OnWeaponDataAdded = delegate { };
+        // Index wise, b
+        public event Action<WeaponData> OnWeaponDataSelected = delegate { };
+
+        // Init UI
+        void Start() => weapons.ForEach(w => OnWeaponDataAdded.Invoke(w));
+
         public void SelectNextWeapon() {
-            if (weapons.Length is 0 or 1)
-                return;
-            
-            DespawnSelectedWeapon();
             var nextIndex = GetNextIndex();
-            _currentWeaponIndex = nextIndex;
-            SpawnSelectedWeapon();
+            SelectWeapon(nextIndex);
         }
         public void SelectPreviousWeapon() {
+            var previousIndex = GetPreviousIndex();
+            SelectWeapon(previousIndex);
+        }
+        // "Respawn" the weapon which is still selected
+        public void SelectCurrentWeapon() => SelectWeapon(_currentWeaponIndex);
+        void SelectWeapon(int index) {
             if (weapons.Length is 0 or 1)
                 return;
             
             DespawnSelectedWeapon();
-            var previousIndex = GetPreviousIndex();
-            _currentWeaponIndex = previousIndex;
+            _currentWeaponIndex = index;
+            OnWeaponDataSelected.Invoke(GetCurrentWeaponData());
             SpawnSelectedWeapon();
+        }
+        void SpawnSelectedWeapon() {
+            var currentWeaponPrefab = GetCurrentWeaponData().Weapon;
+            _spawnedWeapon = Instantiate(currentWeaponPrefab, weaponSocket);
+            _spawnedWeapon.Init(GetCurrentWeaponData());
         }
         int GetNextIndex() =>
             _currentWeaponIndex < weapons.Length - 1
@@ -38,13 +53,8 @@ namespace Gameplay.Runtime.Player.Combat {
                 ? weapons.Length - 1
                 : _currentWeaponIndex - 1;
 
-        public enum EWeaponIndex {
-            Next,
-            Previous
-        }
-
         // Use for static Data-Information
-        public WeaponData GetCurrentWeaponData() {
+        WeaponData GetCurrentWeaponData() {
             if(weapons.Length == 0)
                 throw new UnassignedReferenceException("Weapons Array not assigned");
             
@@ -56,12 +66,9 @@ namespace Gameplay.Runtime.Player.Combat {
             return _spawnedWeapon;
         }
 
-        public void SpawnSelectedWeapon() {
-            var currentWeaponPrefab = GetCurrentWeaponData().Weapon;
-            _spawnedWeapon = Instantiate(currentWeaponPrefab, weaponSocket);
-            _spawnedWeapon.Init(GetCurrentWeaponData());
+        public void DespawnSelectedWeapon() {
+            if(_spawnedWeapon != null)
+                _spawnedWeapon.Dispose();
         }
-
-        public void DespawnSelectedWeapon() => _spawnedWeapon.Dispose();
     }
 }

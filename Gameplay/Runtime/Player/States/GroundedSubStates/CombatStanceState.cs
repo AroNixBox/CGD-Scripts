@@ -33,7 +33,8 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             _cameraControls.SwitchToControllableCameraMode(PlayerCameraControls.ECameraMode.FirstPerson).ContinueWith(
                     () => _controller.VisualModel.gameObject.SetActive(false)
                 ).Forget();
-            _weaponStash.SpawnSelectedWeapon();
+            _weaponStash.SelectCurrentWeapon();
+            _controller.OnCombatStanceStateEntered.Invoke();
         }
 
         public void Tick(float deltaTime) {
@@ -87,6 +88,7 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             _cameraControls.ResetControllableCameras();
             _weaponStash.DespawnSelectedWeapon();
             _controller.VisualModel.gameObject.SetActive(true);
+            _controller.OnCombatStanceStateExited.Invoke();
 
             // Remove Trajectory Line
             if(_trajectoryPredictor == null)

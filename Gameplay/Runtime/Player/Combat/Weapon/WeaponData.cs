@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Sirenix.OdinInspector;
+using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Combat {
     [CreateAssetMenu(menuName = "Player/Combat/Weapon Data")]
@@ -11,5 +12,8 @@ namespace Gameplay.Runtime.Player.Combat {
         [field: SerializeField] public int MaxProjectileForce { get; private set; } = 100;
         [Tooltip("How fast does the projectile force with player inputs")] 
         [field: SerializeField] public int ProjectileForceChangeMultiplier { get; private set; } = 100;
+
+        [SerializeField, Required] Sprite menuIcon;
+        public Sprite MenuIcon => menuIcon;
     }
 }

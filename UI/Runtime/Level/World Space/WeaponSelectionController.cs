@@ -1,0 +1,45 @@
+using System;
+using System.Collections.Generic;
+using Gameplay.Runtime.Player;
+using Gameplay.Runtime.Player.Combat;
+using Sirenix.OdinInspector;
+using UnityEngine;
+
+namespace UI.Runtime.Level.World_Space {
+    // TODO: Might need rework if weapons pickable in runtime
+    public class WeaponSelectionController : MonoBehaviour {
+        [SerializeField, Required] PlayerController controller;
+        [SerializeField, Required] PlayerWeaponStash weaponStash;
+        [SerializeField, Required] WeaponSelectionView view;
+        readonly List<WeaponData> _weaponDatas = new();
+
+        void OnEnable() {
+            weaponStash.OnWeaponDataAdded += AddWeapon;
+            weaponStash.OnWeaponDataSelected += SelectWeaponInUI;
+            controller.OnCombatStanceStateEntered += view.ShowUI;
+            controller.OnCombatStanceStateExited += view.HideUI;
+        }
+
+        // By default UI is off
+        void Start() => view.HideUI();
+
+        void OnDisable() {
+            weaponStash.OnWeaponDataAdded -= AddWeapon;
+            weaponStash.OnWeaponDataSelected -= SelectWeaponInUI;
+            controller.OnCombatStanceStateEntered -= view.ShowUI;
+            controller.OnCombatStanceStateExited -= view.HideUI;
+        }
+
+        void AddWeapon(WeaponData weaponData) {
+            view.SpawnWeaponSelectionEntry(weaponData.MenuIcon);
+            _weaponDatas.Add(weaponData);
+        }
+
+        void SelectWeaponInUI(WeaponData weaponData) {
+            if (!_weaponDatas.Contains(weaponData))
+                throw new NullReferenceException("Weapon was not initialized in WeaponUI");
+            
+            view.EnableWeaponEntryOutline(_weaponDatas.IndexOf(weaponData));
+        }
+    }
+}

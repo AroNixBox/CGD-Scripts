@@ -70,6 +70,12 @@ namespace Gameplay.Runtime.Player {
         
         #endregion
 
+        #region events
+
+        public Action OnCombatStanceStateEntered = delegate { };
+        public Action OnCombatStanceStateExited = delegate { };
+
+        #endregion
         void Awake() {
             _tr = transform;
             _mover = GetComponent<PlayerMover>();
