@@ -13,9 +13,12 @@ namespace Core.Runtime.Cinematics {
         [SerializeField, Required] CinemachineSplineDolly cinemachineSplineDolly;
         
         const float MinimumDistance = 0.5f;
+        const int CameraActivePriority = 20;
         const int CameraInactivePriority = 0;
 
         public async UniTask MoveDollyToTarget(CancellationToken token) {
+            cinemachineCamera.Priority = CameraActivePriority;
+            
             while (!token.IsCancellationRequested &&
                    Vector3.Distance(cinemachineCamera.transform.position, cinemachineSplineEndPoint.position) > MinimumDistance) {
                 cinemachineSplineDolly.CameraPosition += speed * Time.fixedDeltaTime;

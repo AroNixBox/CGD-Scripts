@@ -8,10 +8,16 @@ using UnityEngine;
 namespace Core.Runtime {
     // Manages the Turn Based Loop
     public class RoundInitializer : MonoBehaviour {
+        [SerializeField] bool cinematicOnboarding;
         [SerializeField, Required] AuthorityManager authorityManager;
         [SerializeField, Required] DollyCameraController dollyCameraController;
 
         async void Start() {
+            if (!cinematicOnboarding) {
+                authorityManager.Init();
+                return;
+            }
+            
             try {
                 // 1. Camera Dolly
                 await dollyCameraController.MoveDollyToTarget(this.GetCancellationTokenOnDestroy()); // Scene 
