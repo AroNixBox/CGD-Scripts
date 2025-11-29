@@ -42,6 +42,10 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             if(currentWeapon != null)
                 ChangeProjectileForce(currentWeapon);
             AimWeapon();
+            
+            // TODO:
+            // Could add ammunition check here
+            // So we could draw the trajectory red?
             if(currentWeapon != null)
                 currentWeapon.PredictTrajectory();
         }
@@ -62,16 +66,12 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             spawnedWeapon.transform.forward = activeCameraForward;
         }
         void Attack() {
-            // TODO:
-            // If we wanna trigger an Animation
-            // _animatorController.ChangeAnimationState(AnimationParameters.CastSpell);
+            if (!_weaponStash.TryFire(onProjectileExpired: EndTurn, out var projectile)) {
+                // No Ammo
+                return;
+            }
 
-            var currentWeapon = _weaponStash.GetSpawnedWeapon();
-            // When the Projectile expires, we reset the Bullet Cam again and give Priority to the next player
-            var projectile = currentWeapon.FireWeapon(EndTurn);
             _cameraControls.EnableBulletCamera(projectile.transform);
-            
-            // Exit Condition
             _controller.AuthorityEntity.ResetAuthority();
         }
 

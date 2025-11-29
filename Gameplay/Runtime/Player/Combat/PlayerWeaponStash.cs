@@ -1,28 +1,54 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Sirenix.OdinInspector;
 using Sirenix.Utilities;
 using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Combat {
     public class PlayerWeaponStash : MonoBehaviour {
-        [SerializeField, Required] WeaponData[] weapons;
-        // TODO: We Could have 1 WeaponSocket per weapon and that could be somehow mapped off runtime and identified in runtime
+        [SerializeField, Required] WeaponLoadout loadout;
+        readonly Dictionary<WeaponData, int> _runtimeLoadout = new();
+        
+        // TODO: We Could have 1 WeaponSocket per weapon
         [SerializeField, Required] Transform weaponSocket;
         int _currentWeaponIndex;
 
         Weapon _spawnedWeapon;
-
+        
         public event Action<WeaponData> OnWeaponDataAdded = delegate { };
-        // Index wise, b
         public event Action<WeaponData> OnWeaponDataSelected = delegate { };
+        
+        WeaponData[] Weapons => _runtimeLoadout.Keys.ToArray();
+
+        void Awake() {
+            if (loadout == null) throw new NullReferenceException("Weapon Loadout neets to be referenced");
+            var weaponLoadoutEntries = loadout.WeaponLoadoutEntries;
+            if (weaponLoadoutEntries == null || weaponLoadoutEntries.Length < 1)
+                throw new NullReferenceException("Weapon Loadout Entries cant be empty");
+            
+            foreach (var loadoutEntry in loadout.WeaponLoadoutEntries) {
+                _runtimeLoadout.TryAdd(loadoutEntry.WeaponData, loadoutEntry.Ammunition);
+            }
+        }
 
         // Init UI
-        void Start() => weapons.ForEach(w => OnWeaponDataAdded.Invoke(w));
+        void Start() {
+            // Tell other systems bout all the Weapons the player has in its layout
+            if (loadout == null) throw new NullReferenceException("Weapon Loadout neets to be referenced");
+            foreach (var loadoutWeaponLoadoutEntry in _runtimeLoadout) {
+                var weaponData = loadoutWeaponLoadoutEntry.Key;
+                if(weaponData == null) 
+                    throw new NullReferenceException("Weapon Data needs to be referenced in Loadout-Entry");
 
+                OnWeaponDataAdded.Invoke(weaponData);
+            }
+        }
         public void SelectNextWeapon() {
             var nextIndex = GetNextIndex();
             SelectWeapon(nextIndex);
         }
+        
         public void SelectPreviousWeapon() {
             var previousIndex = GetPreviousIndex();
             SelectWeapon(previousIndex);
@@ -30,7 +56,7 @@ namespace Gameplay.Runtime.Player.Combat {
         // "Respawn" the weapon which is still selected
         public void SelectCurrentWeapon() => SelectWeapon(_currentWeaponIndex);
         void SelectWeapon(int index) {
-            if (weapons.Length is 0 or 1)
+            if (Weapons.Length is 0 or 1) // No Scroll needed
                 return;
             
             DespawnSelectedWeapon();
@@ -38,28 +64,58 @@ namespace Gameplay.Runtime.Player.Combat {
             OnWeaponDataSelected.Invoke(GetCurrentWeaponData());
             SpawnSelectedWeapon();
         }
+        
         void SpawnSelectedWeapon() {
             var currentWeaponPrefab = GetCurrentWeaponData().Weapon;
             _spawnedWeapon = Instantiate(currentWeaponPrefab, weaponSocket);
             _spawnedWeapon.Init(GetCurrentWeaponData());
         }
-        int GetNextIndex() =>
-            _currentWeaponIndex < weapons.Length - 1
+        
+        int GetNextIndex() {
+            if(Weapons.Length == 0)
+                throw new UnassignedReferenceException("Weapons Array not assigned");
+            
+            return _currentWeaponIndex < Weapons.Length - 1
                 ? _currentWeaponIndex + 1
                 : 0;
+        }
 
         int GetPreviousIndex() =>
             _currentWeaponIndex == 0
-                ? weapons.Length - 1
+                ? Weapons.Length - 1
                 : _currentWeaponIndex - 1;
 
         // Use for static Data-Information
         WeaponData GetCurrentWeaponData() {
-            if(weapons.Length == 0)
+            if(Weapons.Length == 0)
                 throw new UnassignedReferenceException("Weapons Array not assigned");
             
-            return weapons[_currentWeaponIndex];
+            return Weapons[_currentWeaponIndex];
         }
+        
+        // In WeaponStash
+        public bool TryFire(Action onProjectileExpired, out Projectile projectile) {
+            projectile = null;
+            var weapon = GetSpawnedWeapon();
+            if (weapon == null) {
+                Debug.LogError("Cannot fire: No weapon is currently spawned. Ensure a weapon is selected before attempting to fire.");
+                return false;
+            }
+        
+            var weaponData = GetCurrentWeaponData();
+            if (!_runtimeLoadout.TryGetValue(weaponData, out var ammo) || ammo <= 0) {
+                // No Ammo
+                return false;
+            }
+        
+            _runtimeLoadout[weaponData]--;
+            projectile = weapon.FireWeapon(onProjectileExpired);
+            // TODO:
+            // Inform UI
+            // OnAmmoChanged?.Invoke(weaponData, _runtimeLoadout[weaponData]);
+            return true;
+        }
+        
 
         // Use for runtime Information like Transforms that move
         public Weapon GetSpawnedWeapon() {
