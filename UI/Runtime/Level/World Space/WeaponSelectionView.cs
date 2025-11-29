@@ -31,6 +31,11 @@ namespace UI.Runtime.Level.World_Space {
             ScrollToElement(targetRect);
         }
 
+        public void UpdateWeaponAmmo(int index, int amount) {
+            var selectedEntry = _weaponEntries[index];
+            selectedEntry.SetAmmo(amount);
+        }
+
         void ScrollToElement(RectTransform target) {
             Canvas.ForceUpdateCanvases();
         

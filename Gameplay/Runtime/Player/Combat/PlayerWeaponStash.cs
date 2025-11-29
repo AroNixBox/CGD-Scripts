@@ -18,6 +18,7 @@ namespace Gameplay.Runtime.Player.Combat {
         
         public event Action<WeaponData> OnWeaponDataAdded = delegate { };
         public event Action<WeaponData> OnWeaponDataSelected = delegate { };
+        public event Action<WeaponData, int> OnAmmoChanged = delegate { }; // Weapon | Amount
         
         WeaponData[] Weapons => _runtimeLoadout.Keys.ToArray();
 
@@ -42,6 +43,7 @@ namespace Gameplay.Runtime.Player.Combat {
                     throw new NullReferenceException("Weapon Data needs to be referenced in Loadout-Entry");
 
                 OnWeaponDataAdded.Invoke(weaponData);
+                OnAmmoChanged.Invoke(weaponData, loadoutWeaponLoadoutEntry.Value);
             }
         }
         public void SelectNextWeapon() {
@@ -112,7 +114,7 @@ namespace Gameplay.Runtime.Player.Combat {
             projectile = weapon.FireWeapon(onProjectileExpired);
             // TODO:
             // Inform UI
-            // OnAmmoChanged?.Invoke(weaponData, _runtimeLoadout[weaponData]);
+            OnAmmoChanged?.Invoke(weaponData, _runtimeLoadout[weaponData]);
             return true;
         }
         

@@ -16,6 +16,7 @@ namespace UI.Runtime.Level.World_Space {
         void OnEnable() {
             weaponStash.OnWeaponDataAdded += AddWeapon;
             weaponStash.OnWeaponDataSelected += SelectWeaponInUI;
+            weaponStash.OnAmmoChanged += UpdateWeaponAmmo;
             controller.OnCombatStanceStateEntered += view.ShowUI;
             controller.OnCombatStanceStateExited += view.HideUI;
         }
@@ -26,6 +27,7 @@ namespace UI.Runtime.Level.World_Space {
         void OnDisable() {
             weaponStash.OnWeaponDataAdded -= AddWeapon;
             weaponStash.OnWeaponDataSelected -= SelectWeaponInUI;
+            weaponStash.OnAmmoChanged -= UpdateWeaponAmmo;
             controller.OnCombatStanceStateEntered -= view.ShowUI;
             controller.OnCombatStanceStateExited -= view.HideUI;
         }
@@ -33,6 +35,13 @@ namespace UI.Runtime.Level.World_Space {
         void AddWeapon(WeaponData weaponData) {
             view.SpawnWeaponSelectionEntry(weaponData.MenuIcon);
             _weaponDatas.Add(weaponData);
+        }
+
+        void UpdateWeaponAmmo(WeaponData weaponData, int ammo) {
+            if (!_weaponDatas.Contains(weaponData))
+                throw new ArgumentOutOfRangeException(weaponData.name, "Tried changing the Ammo on a weapon that is not in the UI");
+            
+            view.UpdateWeaponAmmo(_weaponDatas.IndexOf(weaponData), ammo);
         }
 
         void SelectWeaponInUI(WeaponData weaponData) {
