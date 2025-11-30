@@ -74,6 +74,8 @@ namespace Gameplay.Runtime.Player.Camera {
             bulletCamera.Priority = HighPriority;
         }
         public void ResetBulletCamera() {
+            if (bulletCamera == null) return; // BulletCam was destroyed
+            
             bulletCamera.Priority = LowPriority;
             bulletCamera.transform.localPosition = Vector3.zero;
             _targetTracker.FollowTarget = null;

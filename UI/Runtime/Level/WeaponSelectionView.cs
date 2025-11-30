@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
 
-namespace UI.Runtime.Level.World_Space {
+namespace UI.Runtime.Level {
     public class WeaponSelectionView : MonoBehaviour {
         [SerializeField, Required] RectTransform weaponSelectionMenu;
         [SerializeField, Required] ScrollRect weaponSelectionScroll;

@@ -11,32 +11,44 @@ namespace Core.Runtime.Authority {
     /// Caches the last owner to allow validation during the period between turn end and next turn start.
     /// </summary>
     public class AuthorityManager : MonoBehaviour {
-        [SerializeField] List<AuthorityEntity> authorityEntities = new();
+        [SerializeField, Required] AuthorityEntity authorityEntityPrefab;
+        [SerializeField, Required] List<Transform> authorityEntitiesSpawnPoints; 
         [SerializeField] int startIndex;
-        public event Action<AuthorityEntity> OnAuthorityAuthorityGained = delegate { }; // Start Turn
-        public event Action<AuthorityEntity> OnAuthorityAuthorityRevoked = delegate { }; // End Turn
+        readonly List<AuthorityEntity> _authorityEntities = new();
+        public static event Action<AuthorityEntity> OnEntitySpawned = delegate { };
+        public event Action<AuthorityEntity> OnEntityAuthorityGained = delegate { }; // Start Turn
+        public event Action<AuthorityEntity> OnEntityAuthorityRevoked = delegate { }; // End Turn
         public event Action<AuthorityEntity> OnLastEntityRemaining = delegate { }; // 
         AuthorityEntity _currentAuthority;
         // Track the last authority for GiveNextAuthority(), bec. _currentAuthority gets reset when in Bullet-Cam time
         int _nextAuthorityIndex;
-
-        void Awake() => ServiceLocator.Register(this);
-
-        void OnDestroy() => ServiceLocator.Unregister<AuthorityManager>();
-
+        
         public void Init() {
-            authorityEntities.ForEach(entity => entity.Initialize(this));
+            ServiceLocator.Register(this);
+            
+            foreach (var authorityEntitiesSpawnPoint in authorityEntitiesSpawnPoints) {
+                var spawnedEntity = Instantiate(authorityEntityPrefab, authorityEntitiesSpawnPoint.position,
+                    authorityEntitiesSpawnPoint.rotation);
+                
+                _authorityEntities.Add(spawnedEntity);
+                OnEntitySpawned.Invoke(spawnedEntity);
+            }
+            
+            _authorityEntities.ForEach(entity => entity.Initialize(this));
             SetAuthorityToFirstPlayer();
 
             return;
             
             void SetAuthorityToFirstPlayer() {
-                if (authorityEntities.IsNullOrEmpty(true)) return;
-                if (!authorityEntities.DoesIndexExist(startIndex, true)) return;
+                if (_authorityEntities.IsNullOrEmpty(true)) return;
+                if (!_authorityEntities.DoesIndexExist(startIndex, true)) return;
             
                 GiveNextEntityAuthority();
             }
         }
+        
+        void OnDestroy() => ServiceLocator.Unregister<AuthorityManager>();
+
         
         /// <summary>
         /// Advances to the next player in the list.
@@ -44,11 +56,11 @@ namespace Core.Runtime.Authority {
         [Button, BoxGroup("Debug")]
         public void GiveNextEntityAuthority() {
             if (_nextAuthorityIndex == -1) return; // Dont go in
-            if (authorityEntities.IsNullOrEmpty(true)) return;
+            if (_authorityEntities.IsNullOrEmpty(true)) return;
             // Does Index even exist?
-            if (_nextAuthorityIndex >= authorityEntities.Count) return;
+            if (_nextAuthorityIndex >= _authorityEntities.Count) return;
             
-            var nextPlayer = authorityEntities[_nextAuthorityIndex];
+            var nextPlayer = _authorityEntities[_nextAuthorityIndex];
             GiveAuthorityTo(nextPlayer);
             
             return;
@@ -59,17 +71,17 @@ namespace Core.Runtime.Authority {
                     return;
                 }
             
-                if (!authorityEntities.Contains(newAuthorityEntity)) {
+                if (!_authorityEntities.Contains(newAuthorityEntity)) {
                     Debug.LogError("AuthorityManager: Tried to set authority to a player that is not registered.");
                     return;
                 }
 
-                var currentIndex = authorityEntities.IndexOf(newAuthorityEntity);
-                _nextAuthorityIndex = (currentIndex + 1) % authorityEntities.Count;
+                var currentIndex = _authorityEntities.IndexOf(newAuthorityEntity);
+                _nextAuthorityIndex = (currentIndex + 1) % _authorityEntities.Count;
                 if (_currentAuthority != null)
-                    OnAuthorityAuthorityRevoked.Invoke(_currentAuthority);
+                    OnEntityAuthorityRevoked.Invoke(_currentAuthority);
                 _currentAuthority = newAuthorityEntity;
-                OnAuthorityAuthorityGained.Invoke(newAuthorityEntity);
+                OnEntityAuthorityGained.Invoke(newAuthorityEntity);
             }
         }
 
@@ -84,7 +96,7 @@ namespace Core.Runtime.Authority {
                 return;
             }
             if (_currentAuthority != null)
-                OnAuthorityAuthorityRevoked.Invoke(_currentAuthority);
+                OnEntityAuthorityRevoked.Invoke(_currentAuthority);
             
             _currentAuthority = null;
         }
@@ -92,18 +104,18 @@ namespace Core.Runtime.Authority {
         [Button, BoxGroup("Debug")]
         public void UnregisterEntity(int index) {
             // Does index even exist?
-            if (index < 0 || index >= authorityEntities.Count) return;
+            if (index < 0 || index >= _authorityEntities.Count) return;
             
-            UnregisterEntity(authorityEntities[index]);
+            UnregisterEntity(_authorityEntities[index]);
         }
 
         public void UnregisterEntity(AuthorityEntity authorityEntity) {
             if (!ValidateEntityForUnregister(authorityEntity)) return;
 
-            var removedIndex = authorityEntities.IndexOf(authorityEntity);
+            var removedIndex = _authorityEntities.IndexOf(authorityEntity);
             var hadAuthority = HasAuthority(authorityEntity);
     
-            authorityEntities.Remove(authorityEntity);
+            _authorityEntities.Remove(authorityEntity);
             AdjustNextAuthorityIndex(removedIndex);
             HandleGameEndCondition();
             HandleAuthorityTransfer(hadAuthority);
@@ -114,7 +126,7 @@ namespace Core.Runtime.Authority {
                 return false;
             }
 
-            return authorityEntities.Contains(authorityEntity);
+            return _authorityEntities.Contains(authorityEntity);
         }
 
         void AdjustNextAuthorityIndex(int removedIndex) {
@@ -125,10 +137,10 @@ namespace Core.Runtime.Authority {
         }
 
         void HandleGameEndCondition() {
-            if (authorityEntities.Count != 1) return;
+            if (_authorityEntities.Count != 1) return;
             
             _nextAuthorityIndex = -1;
-            OnLastEntityRemaining.Invoke(authorityEntities[0]);
+            OnLastEntityRemaining.Invoke(_authorityEntities[0]);
             Debug.Log("<color=red>Last Entity has been Reached, Game Over?</color>");
         }
 

@@ -2,7 +2,7 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace UI.Runtime.Level.WorldSpace {
+namespace UI.Runtime.Level {
     public class HealthBarView : MonoBehaviour {
         [SerializeField, Required] Slider uiHealthBar;
 

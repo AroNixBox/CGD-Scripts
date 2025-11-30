@@ -5,7 +5,7 @@ using Gameplay.Runtime.Player.Combat;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace UI.Runtime.Level.World_Space {
+namespace UI.Runtime.Level {
     // TODO: Might need rework if weapons pickable in runtime
     public class WeaponSelectionController : MonoBehaviour {
         [SerializeField, Required] PlayerController controller;

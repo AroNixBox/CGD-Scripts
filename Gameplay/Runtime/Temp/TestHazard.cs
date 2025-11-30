@@ -18,14 +18,14 @@ namespace Gameplay.Runtime {
                 throw new NullReferenceException("Authority-Manager aint registered");
             
             // Damage on Turn End
-            _authorityManager.OnAuthorityAuthorityRevoked += CheckDamageablesInRange;
+            _authorityManager.OnEntityAuthorityRevoked += CheckDamageablesInRange;
             // Damage on Turn Start
             // authorityManager.OnAuthorityAuthorityGained += CheckDamageablesInRange;
         }
 
         void OnDisable() {
             if(_authorityManager != null)
-                _authorityManager.OnAuthorityAuthorityRevoked -= CheckDamageablesInRange;
+                _authorityManager.OnEntityAuthorityRevoked -= CheckDamageablesInRange;
             // authorityManager.OnAuthorityAuthorityGained -= CheckDamageablesInRange;
         }
 

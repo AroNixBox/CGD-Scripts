@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace UI.Runtime.Level.World_Space {
+namespace UI.Runtime.Level {
     public class WeaponSelectionEntry : MonoBehaviour {
         [SerializeField, Required] Image iconImage;
         [SerializeField, Required] Outline backgroundOutline;

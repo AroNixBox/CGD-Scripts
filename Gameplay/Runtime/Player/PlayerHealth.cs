@@ -9,16 +9,16 @@ namespace Gameplay.Runtime.Player {
         [SerializeField, Required] AuthorityEntity authorityEntity;
         [SerializeField] uint maxHealth = 100;
         float _currentHealth;
-        public event Action<float> OnMaxHealthInitialized = delegate { };
         public event Action<float> OnCurrentHealthChanged = delegate { };
 
         void Awake() {
             _currentHealth = maxHealth;
         }
 
-        void Start() {
-            OnMaxHealthInitialized?.Invoke(maxHealth);
+        public uint GetMaxHealth() {
+            return maxHealth;
         }
+
         public void TakeDamage(float damage) {
             _currentHealth -= damage;
             _currentHealth = Mathf.Clamp(_currentHealth, 0, _currentHealth);
