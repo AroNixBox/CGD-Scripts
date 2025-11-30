@@ -277,31 +277,53 @@ namespace Core.Runtime.Service.Input
                     ""isPartOfComposite"": false
                 },
                 {
-                    ""name"": """",
-                    ""id"": ""794e6309-00c4-40b7-a6e0-802e2b1a95cf"",
-                    ""path"": ""<Mouse>/forwardButton"",
+                    ""name"": ""Mouse Up"",
+                    ""id"": ""2699982e-15f6-4913-b02d-e425490b37e2"",
+                    ""path"": ""1DAxis(whichSideWins=1)"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""IncreaseWeaponForce"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""positive"",
+                    ""id"": ""60275ac0-0211-4732-b3c4-7e2f09821c2a"",
+                    ""path"": ""<Mouse>/scroll/up"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Keyboard&Mouse"",
                     ""action"": ""IncreaseWeaponForce"",
                     ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""Scroll Down"",
+                    ""id"": ""bdb7cf14-1ae1-4a88-89e9-5e8299356747"",
+                    ""path"": ""1DAxis(whichSideWins=1)"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""DecreaseWeaponForce"",
+                    ""isComposite"": true,
                     ""isPartOfComposite"": false
                 },
                 {
-                    ""name"": """",
-                    ""id"": ""4ca4a73b-8661-419f-8fd0-26fd84b67856"",
-                    ""path"": ""<Mouse>/backButton"",
+                    ""name"": ""positive"",
+                    ""id"": ""f531a207-9f3b-4e50-a6dd-64aea0dbbc07"",
+                    ""path"": ""<Mouse>/scroll/down"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Keyboard&Mouse"",
                     ""action"": ""DecreaseWeaponForce"",
                     ""isComposite"": false,
-                    ""isPartOfComposite"": false
+                    ""isPartOfComposite"": true
                 },
                 {
                     ""name"": """",
-                    ""id"": ""2f9fc1ac-3796-4e1c-84b9-4e309d3e105a"",
-                    ""path"": ""<Keyboard>/rightArrow"",
+                    ""id"": ""c7bac347-f789-4748-b9aa-1e4a40ebdada"",
+                    ""path"": ""<Keyboard>/e"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Keyboard&Mouse"",
@@ -311,8 +333,8 @@ namespace Core.Runtime.Service.Input
                 },
                 {
                     ""name"": """",
-                    ""id"": ""97cf66dd-346c-4f9e-96fd-3f0372b55313"",
-                    ""path"": ""<Keyboard>/leftArrow"",
+                    ""id"": ""13c5e0c6-741a-4486-ae58-50cc2c0bc1de"",
+                    ""path"": ""<Keyboard>/q"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Keyboard&Mouse"",
