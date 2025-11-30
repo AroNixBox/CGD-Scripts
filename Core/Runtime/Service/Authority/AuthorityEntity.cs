@@ -6,7 +6,10 @@ namespace Core.Runtime.Authority {
     /// </summary>
     public class AuthorityEntity : MonoBehaviour {
         AuthorityManager _authorityManager;
-        public void Initialize(AuthorityManager authManager) => _authorityManager = authManager;
+
+        public void Initialize(AuthorityManager authManager) {
+            _authorityManager = authManager;
+        }
         
         public bool HasAuthority() {
             if (_authorityManager == null) {

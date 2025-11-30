@@ -2,7 +2,7 @@
 
 namespace Gameplay.Runtime.Interfaces {
     public interface IDamageable {
-        public uint GetMaxHealth();
+        public float GetHealth();
         event Action<float> OnCurrentHealthChanged;
         public void TakeDamage(float damage);
     }

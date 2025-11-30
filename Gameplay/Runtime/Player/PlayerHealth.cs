@@ -15,8 +15,8 @@ namespace Gameplay.Runtime.Player {
             _currentHealth = maxHealth;
         }
 
-        public uint GetMaxHealth() {
-            return maxHealth;
+        public float GetHealth() {
+            return _currentHealth;
         }
 
         public void TakeDamage(float damage) {
