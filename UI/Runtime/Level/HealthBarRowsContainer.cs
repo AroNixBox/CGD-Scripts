@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Core.Runtime;
 using Core.Runtime.Authority;
 using Core.Runtime.Backend;
+using Core.Runtime.Service;
 using Gameplay.Runtime.Interfaces;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -58,9 +60,9 @@ namespace UI.Runtime.Level {
             AuthorityManager.OnEntitySpawned -= TryCreateHealthBar;
         }
 
-        void TryCreateHealthBar(AuthorityEntity authEntity, UserData userData) {
+        void TryCreateHealthBar(AuthorityEntity authEntity) {
             if (!authEntity.TryGetComponent(out IDamageable damageable)) return;
-            CreateHealthBar(damageable, userData);
+            CreateHealthBar(damageable, authEntity.UserData);
         }
 
         // TODO: Event that listens to some Creation Event that spawns healthbars

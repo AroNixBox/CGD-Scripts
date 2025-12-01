@@ -12,36 +12,43 @@ namespace Core.Runtime.Authority {
     /// Caches the last owner to allow validation during the period between turn end and next turn start.
     /// </summary>
     public class AuthorityManager : MonoBehaviour {
-        [SerializeField, Required] List<UserData> userDatas;
         [SerializeField, Required] AuthorityEntity authorityEntityPrefab;
         [SerializeField, Required] List<Transform> authorityEntitiesSpawnPoints; 
         [SerializeField] int startIndex;
         readonly List<AuthorityEntity> _authorityEntities = new();
-        public static event Action<AuthorityEntity, UserData> OnEntitySpawned = delegate { };
+
+        #region Events
+
+        public static event Action<AuthorityEntity> OnEntitySpawned = delegate { };
         public event Action<AuthorityEntity> OnEntityAuthorityGained = delegate { }; // Start Turn
         public event Action<AuthorityEntity> OnEntityAuthorityRevoked = delegate { }; // End Turn
         public static event Action<AuthorityEntity> OnEntityDied = delegate { };
         public event Action<AuthorityEntity> OnLastEntityRemaining = delegate { }; // 
+
+        #endregion
+        
         AuthorityEntity _currentAuthority;
         // Track the last authority for GiveNextAuthority(), bec. _currentAuthority gets reset when in Bullet-Cam time
         int _nextAuthorityIndex;
-        
-        public void Init() {
+
+        void OnEnable() {
             ServiceLocator.Register(this);
-            
-            foreach (var userData in userDatas) {
-                var spawnPoint = authorityEntitiesSpawnPoints[UnityEngine.Random.Range(0, authorityEntitiesSpawnPoints.Count -1)];
-                var spawnedEntity = Instantiate(authorityEntityPrefab, spawnPoint.position, spawnPoint.rotation);
-                spawnedEntity.Initialize(this);
-                _authorityEntities.Add(spawnedEntity);
-                
-                // Currently our AuthorityEntities still have no connection to their userdatas, could do that tho
-                OnEntitySpawned.Invoke(spawnedEntity, userData);
-            }
-            
+        }
+
+        public AuthorityEntity InitializeEntity(UserData userData) {
+            var spawnPoint = authorityEntitiesSpawnPoints[UnityEngine.Random.Range(0, authorityEntitiesSpawnPoints.Count - 1)];
+            var spawnedEntity = Instantiate(authorityEntityPrefab, spawnPoint.position, spawnPoint.rotation);
+            spawnedEntity.Initialize(this, userData);
+            _authorityEntities.Add(spawnedEntity);
+            OnEntitySpawned.Invoke(spawnedEntity);
+            return spawnedEntity;
+        }
+        
+        public void StartFlow() {
             // First Player Auth
             if (_authorityEntities.IsNullOrEmpty(true)) return;
             if (!_authorityEntities.DoesIndexExist(startIndex, true)) return;
+           
             GiveNextEntityAuthority();
         }
         

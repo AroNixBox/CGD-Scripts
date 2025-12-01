@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Core.Runtime.Backend;
+using UnityEngine;
 
 namespace Core.Runtime.Authority {
     /// <summary>
@@ -6,9 +7,12 @@ namespace Core.Runtime.Authority {
     /// </summary>
     public class AuthorityEntity : MonoBehaviour {
         AuthorityManager _authorityManager;
+        public UserData UserData => _userData;
+        UserData _userData;
 
-        public void Initialize(AuthorityManager authManager) {
+        public void Initialize(AuthorityManager authManager, UserData userData) {
             _authorityManager = authManager;
+            _userData = userData;
         }
         
         public bool HasAuthority() {
