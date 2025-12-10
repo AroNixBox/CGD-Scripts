@@ -36,13 +36,13 @@ namespace Gameplay.Runtime.Player.Combat {
             );
         
         public void IncreaseProjectileForce() {
-            _projectileForce += Time.deltaTime * _weaponData.ProjectileForceChangeMultiplier;
-            _projectileForce = Mathf.Clamp(_projectileForce, _weaponData.MinProjectileForce, _weaponData.MaxProjectileForce);
+            _projectileForce += Time.deltaTime * _weaponData.GlobalWeaponData.ProjectileForceChangeMultiplier;
+            _projectileForce = Mathf.Clamp(_projectileForce, _weaponData.GlobalWeaponData.MinProjectileForce, _weaponData.GlobalWeaponData.MaxProjectileForce);
         }
 
         public void DecreaseProjectileForce() {
-            _projectileForce -= Time.deltaTime * _weaponData.ProjectileForceChangeMultiplier;
-            _projectileForce = Mathf.Clamp(_projectileForce, _weaponData.MinProjectileForce, _weaponData.MaxProjectileForce);
+            _projectileForce -= Time.deltaTime * _weaponData.GlobalWeaponData.ProjectileForceChangeMultiplier;
+            _projectileForce = Mathf.Clamp(_projectileForce, _weaponData.GlobalWeaponData.MinProjectileForce, _weaponData.GlobalWeaponData.MaxProjectileForce);
         }
         
         public Projectile FireWeapon(Action onProjectileExpired) {
