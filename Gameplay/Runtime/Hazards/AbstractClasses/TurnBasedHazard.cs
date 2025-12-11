@@ -21,13 +21,15 @@ namespace Gameplay.Runtime
             OnEnable();
         }
         
-        protected virtual void OnEnable() {
+        protected override void OnEnable() {
             if (!_initialized) return;
+            base.OnEnable();
             AuthorityManager.OnEntityAuthorityGained += HandleOnTurnStartInternal;
             AuthorityManager.OnEntityAuthorityRevoked += HandleOnTurnEndInternal;
         }
         
-        protected virtual void OnDisable() {
+        protected override void OnDisable() {
+            base.OnDisable();
             AuthorityManager.OnEntityAuthorityGained -= HandleOnTurnStartInternal;
             AuthorityManager.OnEntityAuthorityRevoked -= HandleOnTurnEndInternal;
         }

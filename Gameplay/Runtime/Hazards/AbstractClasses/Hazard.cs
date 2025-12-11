@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Core.Runtime;
 using Core.Runtime.Authority;
 using Core.Runtime.Service;
 using UnityEngine;
 
 namespace Gameplay.Runtime {
+    
+    [RequireComponent(typeof(Collider))]
     public abstract class Hazard : MonoBehaviour {
         protected class HazardData {
             public int TurnCount;
@@ -19,20 +22,38 @@ namespace Gameplay.Runtime {
             typeof(TurnBasedHazard),
             typeof(ConstantHazard),
         };
-
-        [SerializeField] protected Collider hazardCollider;
+        
+        [SerializeField] [Tooltip("Duration of the hazard in turns (of all players). Negative value means infinite lifetime, zero means it will be destroyed immediately before the next player turn.")]
+        protected int turnDuration = -1; // Negative value means infinite lifetime
+        
+        protected Collider HazardCollider;
         protected AuthorityManager AuthorityManager;
         protected readonly Dictionary<AuthorityEntity, HazardData> EntitiesInHazard = new();
-        
+        protected int TurnCounter = 0;
 
         protected virtual void Start() {
             ValidateInheritance();
-            if (hazardCollider == null)
-                throw new NullReferenceException("HazardCollider not Set");
             if (!ServiceLocator.TryGet(out AuthorityManager))
                 throw new NullReferenceException("Authority-Manager not registered");
-            if (!hazardCollider.isTrigger) 
-                throw new ArgumentException("Hazard Collider must be set as Trigger");
+            HazardCollider = GetComponent<Collider>();
+            if (!HazardCollider.isTrigger) 
+                throw new ArgumentException("Collider must be set as Trigger");
+        }
+
+        protected virtual void OnEnable() {
+            if(turnDuration >= 0) AuthorityManager.OnEntityAuthorityGained += CheckAlive;
+        }
+        
+        protected virtual void OnDisable() {
+            if(turnDuration >= 0) AuthorityManager.OnEntityAuthorityGained -= CheckAlive;
+        }
+        
+        private void CheckAlive(AuthorityEntity _) {
+            TurnCounter++;
+            if (TurnCounter <= turnDuration * AuthorityManager.EntityCount) return;
+            // turnDuration == 0 means survive one player turn
+            if (turnDuration == 0 && TurnCounter == 1) return;
+            Destroy(gameObject);
         }
         
         private void ValidateInheritance() {
