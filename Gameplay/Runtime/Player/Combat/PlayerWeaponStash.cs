@@ -20,6 +20,8 @@ namespace Gameplay.Runtime.Player.Combat {
         public event Action<WeaponData> OnWeaponDataSelected = delegate { };
         public event Action<WeaponData, int> OnAmmoChanged = delegate { }; // Weapon | Amount
         
+        public event Action<Projectile> OnSuccessfulShot;
+        
         WeaponData[] Weapons => _runtimeLoadout.Keys.ToArray();
 
         void Awake() {
@@ -115,6 +117,7 @@ namespace Gameplay.Runtime.Player.Combat {
             // TODO:
             // Inform UI
             OnAmmoChanged?.Invoke(weaponData, _runtimeLoadout[weaponData]);
+            OnSuccessfulShot?.Invoke(projectile);
             return true;
         }
         
