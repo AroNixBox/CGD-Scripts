@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
@@ -11,12 +12,36 @@ namespace Core.Runtime.Cinematics {
         [SerializeField, Required] CinemachineCamera cinemachineCamera;
         [SerializeField, Required] Transform cinemachineSplineEndPoint;
         [SerializeField, Required] CinemachineSplineDolly cinemachineSplineDolly;
+
+        [SerializeField] bool performDolly;
         
         const float MinimumDistance = 0.5f;
         const int CameraActivePriority = 20;
         const int CameraInactivePriority = 0;
 
-        public async UniTask MoveDollyToTarget(CancellationToken token) {
+        void OnEnable() {
+            if (!performDolly) return;
+            GameManager.OnGameInit += HandleGameInit;
+        }
+
+        void OnDisable() {
+            if (!performDolly) return;
+            GameManager.OnGameInit -= HandleGameInit;
+        }
+
+        /// <summary>
+        /// Registers the dolly movement as an async initialization task.
+        /// The GameManager will await this task before starting the game.
+        /// </summary>
+        void HandleGameInit(object sender, GameManager.GameInitEventArgs args) {
+            // Use this object's lifetime as cancellation source.
+            var token = this.GetCancellationTokenOnDestroy();
+
+            // Register camera movement as part of the init sequence.
+            args.CompletionTasks.Add(MoveDollyToTarget(token));
+        }
+
+        async UniTask MoveDollyToTarget(CancellationToken token) {
             cinemachineCamera.Priority = CameraActivePriority;
             
             while (!token.IsCancellationRequested &&

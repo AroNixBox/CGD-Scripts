@@ -1,45 +1,61 @@
 using System;
 using System.Collections.Generic;
-using Core.Runtime.Authority;
+using System.Linq;
 using Core.Runtime.Backend;
-using Core.Runtime.Cinematics;
-using Core.Runtime.Service;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Core.Runtime {
-    // Manages the Turn Based Loop
+    // Event args for the initialization event.
+    // Allows subscribers to register multiple asynchronous tasks
+    // that must finish before the game can start.
     public class GameManager : MonoBehaviour {
-        [SerializeField] bool cinematicOnboarding;
-        [SerializeField, Required] AuthorityManager authorityManager;
-        [SerializeField, Required] DollyCameraController dollyCameraController; 
-        
-        // TODO: Should be injected from selection screen
         [SerializeField, Required] List<UserData> userDatas;
 
-        async void Start() {
-            if (!cinematicOnboarding) {
-                InitializeGame();
-                return;
+        // Events
+        public static event EventHandler<GameInitEventArgs> OnGameInit;
+        public static UnityEvent OnGameStart = new();
+
+        void Start() => _ = InitializeGameAsync();
+
+        /// <summary>
+        /// Fires the OnGameInit event and awaits all initialization tasks
+        /// registered by subscribers.
+        /// </summary>
+        async UniTask InitializeGameAsync() {
+            if (OnGameInit != null) {
+                // Create one shared args instance for all subscribers
+                var initArgs = new GameInitEventArgs(userDatas);
+
+                // Notify all subscribers
+                OnGameInit.Invoke(this, initArgs);
+
+                // Wait for all async tasks registered by subscribers
+                if (initArgs.CompletionTasks.Any()) {
+                    await UniTask.WhenAll(initArgs.CompletionTasks);
+                }
             }
-            
-            try {
-                // 1. Camera Dolly
-                await dollyCameraController.MoveDollyToTarget(this.GetCancellationTokenOnDestroy()); // Scene 
-                InitializeGame();
-            }
-            catch (OperationCanceledException e) {
-                // Noop, Scene was switched while the Initialization was running (its okay :))
-            }
+
+            OnGameStart?.Invoke();
         }
 
-        void InitializeGame() {
-            foreach (var userData in userDatas) {
-                authorityManager.InitializeEntity(userData);
-            }
+        void OnDestroy() {
+            // Cleanup static events to avoid memory leaks during domain reloads
+            OnGameInit = null;
+            OnGameStart = null;
+        }
+        
+        public class GameInitEventArgs : EventArgs {
+            public List<UserData> UserDatas { get; }
 
-            authorityManager.StartFlow();
+            // Subscribers can add any number of initialization tasks here.
+            public List<UniTask> CompletionTasks { get; } = new();
+
+            public GameInitEventArgs(List<UserData> userDatas) {
+                UserDatas = userDatas;
+            }
         }
     }
 }

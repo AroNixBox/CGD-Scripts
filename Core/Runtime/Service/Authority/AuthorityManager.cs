@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Common.Runtime._Scripts.Common.Runtime.Extensions;
 using Core.Runtime.Backend;
 using Core.Runtime.Service;
+using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -33,18 +34,35 @@ namespace Core.Runtime.Authority {
 
         void OnEnable() {
             ServiceLocator.Register(this);
+            GameManager.OnGameInit += HandleInit;
+            GameManager.OnGameStart.AddListener(StartFlow);
         }
 
-        public AuthorityEntity InitializeEntity(UserData userData) {
-            var spawnPoint = authorityEntitiesSpawnPoints[UnityEngine.Random.Range(0, authorityEntitiesSpawnPoints.Count - 1)];
-            var spawnedEntity = Instantiate(authorityEntityPrefab, spawnPoint.position, spawnPoint.rotation);
-            spawnedEntity.Initialize(this, userData);
-            _authorityEntities.Add(spawnedEntity);
-            OnEntitySpawned.Invoke(spawnedEntity);
-            return spawnedEntity;
+        void OnDisable() {
+            ServiceLocator.Unregister<AuthorityManager>();
+            GameManager.OnGameInit -= HandleInit;
+            GameManager.OnGameStart.RemoveListener(StartFlow);
         }
         
-        public void StartFlow() {
+        void HandleInit(object sender, GameManager.GameInitEventArgs args) {
+            args.CompletionTasks.Add(InitializeEntities(args.UserDatas));
+        }
+
+        UniTask InitializeEntities(List<UserData> userDatas) {
+            foreach (var userData in userDatas) {
+                // Spawn Entity & Init
+                var spawnPoint = authorityEntitiesSpawnPoints[UnityEngine.Random.Range(0, authorityEntitiesSpawnPoints.Count - 1)];
+                var spawnedEntity = Instantiate(authorityEntityPrefab, spawnPoint.position, spawnPoint.rotation);
+                spawnedEntity.Initialize(this, userData);
+                
+                _authorityEntities.Add(spawnedEntity);
+                OnEntitySpawned.Invoke(spawnedEntity);
+            }
+            
+            return UniTask.CompletedTask;
+        }
+        
+        void StartFlow() {
             // First Player Auth
             if (_authorityEntities.IsNullOrEmpty(true)) return;
             if (!_authorityEntities.DoesIndexExist(startIndex, true)) return;
