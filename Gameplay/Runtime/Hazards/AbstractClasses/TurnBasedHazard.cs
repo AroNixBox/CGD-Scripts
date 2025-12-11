@@ -33,7 +33,7 @@ namespace Gameplay.Runtime
         }
         
         private void HandleOnTurnStartInternal(AuthorityEntity newTurnEntity) {
-            if (!EntitiesInHazard.TryGetValue(newTurnEntity, out var hazardData)) return;
+            if (!EntitiesInHazard.TryGetValue(newTurnEntity, out HazardData hazardData)) return;
             hazardData.TurnCount++;
             HandleOnTurnStart(newTurnEntity, hazardData);
         }
@@ -43,7 +43,7 @@ namespace Gameplay.Runtime
         }
         
         private void HandleOnTurnEndInternal(AuthorityEntity newTurnEntity) {
-            if (!EntitiesInHazard.TryGetValue(newTurnEntity, out var hazardData)) return;
+            if (!EntitiesInHazard.TryGetValue(newTurnEntity, out HazardData hazardData)) return;
             HandleOnTurnEnd(newTurnEntity, hazardData);
         }
 
