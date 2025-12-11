@@ -9,7 +9,7 @@ namespace Gameplay.Runtime.Player.Combat {
         [Tooltip("Bullet Spawn Point")]
         [SerializeField, Required] public Transform muzzlePoint;
         
-        float _projectileForce;
+        float _projectileForce = 15;
         
         WeaponData _weaponData;
         TrajectoryPredictor _trajectoryPredictor;

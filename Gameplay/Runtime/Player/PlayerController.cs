@@ -64,6 +64,13 @@ namespace Gameplay.Runtime.Player {
         [SerializeField] float debugBaseStateDrawRadius = .25f;
         
         StateMachine _stateMachine;
+        
+        private float _speedMultiplier = 1f;
+        
+        public float MovementSpeed => movementSpeed;
+        public float SpeedMultiplier => _speedMultiplier;
+        
+        public float EffectiveMovementSpeed => movementSpeed * _speedMultiplier;
 
         Vector3 _momentum, _savedVelocity, _savedMovementVelocity, _externalForces;
         public event Action<Vector3> OnLand = delegate { }; // TODO: Call when entering Grounded State
@@ -273,7 +280,7 @@ namespace Gameplay.Runtime.Player {
             var movementVelocity = CalculateMovementVelocity(); // Controlled falling
             // Figure out what our actual Movement Velocity is and make adjustments
             // Moving faster than our movement speed? => From a fall e.g.
-            if (horizontalMomentum.magnitude > movementSpeed) {
+            if (horizontalMomentum.magnitude > EffectiveMovementSpeed) {
                 // Evaluate if the Movement Velocity Vector has any component in the direction of our current horizontal momentum
                 // Means are we trying to move in the same direction as our momentum is going
                 // To not get crazy momentum increases
@@ -288,10 +295,10 @@ namespace Gameplay.Runtime.Player {
             else {
                 horizontalMomentum += movementVelocity * (Time.deltaTime * airControlRate);
                 // Dont overshoot our movement speed
-                horizontalMomentum = Vector3.ClampMagnitude(horizontalMomentum, movementSpeed);
+                horizontalMomentum = Vector3.ClampMagnitude(horizontalMomentum, EffectiveMovementSpeed);
             }
         }
-        Vector3 CalculateMovementVelocity() => CalculateMovementDirection() * movementSpeed;
+        Vector3 CalculateMovementVelocity() => CalculateMovementDirection() * EffectiveMovementSpeed;
         // Based on Camera and players input
         // TODO: Check if we need to Vector3.zero if no auth, because technicall we dont have any input then
         Vector3 CalculateMovementDirection() {
@@ -331,6 +338,16 @@ namespace Gameplay.Runtime.Player {
             
             Gizmos.color = currentState.GizmoState();
             Gizmos.DrawSphere(transform.position + Vector3.up * drawHeight, drawRadius);
+        }
+        
+        public void SetSpeedMultiplier(float speedMultiplier) {
+            _speedMultiplier = speedMultiplier;
+            AnimatorController.UpdateAnimatorSpeed(EffectiveMovementSpeed);
+        }
+        
+        public void ResetSpeedMultiplier() {
+            _speedMultiplier = 1f;
+            AnimatorController.UpdateAnimatorSpeed(EffectiveMovementSpeed);
         }
     }
 }

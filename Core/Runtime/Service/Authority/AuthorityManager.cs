@@ -178,5 +178,7 @@ namespace Core.Runtime.Authority {
         public bool HasAuthority(AuthorityEntity authorityEntity) {
             return ReferenceEquals(_currentAuthority, authorityEntity);
         }
+
+        public int EntityCount => _authorityEntities.Count;
     }
 }
