@@ -11,7 +11,6 @@ namespace Gameplay.Runtime
         {
             if (!target.TryGetComponent(out IDamageable damageable)) return;
             damageable.TakeDamage(damagePerTurn);
-            print($"{gameObject.name} applied {damagePerTurn} damage to {target.name}.");
         }
     }
 }

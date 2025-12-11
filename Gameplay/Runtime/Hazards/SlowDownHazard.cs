@@ -10,12 +10,10 @@ namespace Gameplay.Runtime
         protected override void EnterEffect(GameObject target, HazardData hazardData) {
             if (!target.TryGetComponent(out PlayerController playerController)) return;
             playerController.SetSpeedMultiplier(slowDownFactor);
-            print($"{gameObject.name} slowed down {target.gameObject.name} by a factor of {slowDownFactor}.");
         }
         protected override void ExitEffect(GameObject target, HazardData hazardData) {
             if (!target.TryGetComponent(out PlayerController playerController)) return;
             playerController.ResetSpeedMultiplier();
-            print($"{gameObject.name} reset speed of {target.gameObject.name}.");
         }
 
     }
