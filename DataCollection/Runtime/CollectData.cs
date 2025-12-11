@@ -5,6 +5,7 @@ using Core.Runtime.Authority;
 using Core.Runtime.Service;
 using Gameplay.Runtime.Player.Combat;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace DataCollection.Runtime {
     /// <summary>
@@ -13,40 +14,39 @@ namespace DataCollection.Runtime {
     public class CollectData : MonoBehaviour {
         [Serializable]
         private struct MatchData {
-            public string MatchDuration; //done
-            public int TotalTurns; //done
-            public string Winner; //done
+            public string matchDuration; //done
+            public int totalTurns; //done
+            public string winner; //done
         }
 
         [Serializable]
         private struct UserData {
-            public string UserName; // done
-            public List<Vector3> Positions; // done
-            public List<double> DamagePerTurn;
-            public List<string> UsedWeaponPerTurn;
-            public List<double> MovementPercentagePerTurn; // noch nicht eingebaut
-            public List<string> TurnDurations; // done
-            public int TotalKills;
-            public bool Died; // done
-            public Vector3 KillerPositionOnDeath;
-            public string DeathReason;
-            public bool UserRatedMatchAsFair; // noch nicht eingebaut
+            public string userName; // done
+            public List<Vector3> positions; // done
+            public List<double> damagePerTurn; 
+            public List<string> usedWeaponPerTurn; // done
+            public List<double> movementPercentagePerTurn; // noch nicht eingebaut
+            public List<string> turnDurations; // done
+            public int totalKills;
+            public bool died; // done
+            public Vector3 killerPositionOnDeath;
+            public bool userRatedMatchAsFair; // noch nicht eingebaut
         }
 
         [Serializable]
         private struct WeaponData {
-            public string WeaponName;
-            public int UsageCount;
-            public int HitCount;
-            public List<double> DamagePerUsage;
-            public List<double> DistanceToTargetPerUsage;
+            public string weaponName; // done
+            public int usageCount; // done
+            public int hitCount;
+            public List<double> damagePerUsage;
+            public List<double> distanceToTargetPerUsage;
         }
 
         [Serializable]
         private class GameData {
-            public MatchData MatchData;
-            public List<UserData> UserDatas;
-            public List<WeaponData> WeaponDatas;
+            public MatchData matchData;
+            public List<UserData> userDatas;
+            public List<WeaponData> weaponDatas;
         }
 
         private MatchData _matchData;
@@ -75,8 +75,8 @@ namespace DataCollection.Runtime {
             _matchStartTime = DateTime.Now;
             _matchData = new MatchData
             {
-                TotalTurns = 0,
-                Winner = "",
+                totalTurns = 0,
+                winner = "",
             };
         }
 
@@ -84,14 +84,14 @@ namespace DataCollection.Runtime {
         /// Increments the turn counter.
         /// </summary>
         public void IncrementTurn() {
-            _matchData.TotalTurns++;
+            _matchData.totalTurns++;
         }
 
         /// <summary>
         /// Sets the winner information.
         /// </summary>
         public void SetWinner(string winnerName) {
-            _matchData.Winner = winnerName;
+            _matchData.winner = winnerName;
         }
 
         /// <summary>
@@ -99,7 +99,7 @@ namespace DataCollection.Runtime {
         /// </summary>
         public void EndMatchDataCollection() {
             TimeSpan duration = DateTime.Now - _matchStartTime;
-            _matchData.MatchDuration = duration.ToString(@"hh\:mm\:ss");
+            _matchData.matchDuration = duration.ToString(@"hh\:mm\:ss");
         }
 
         #endregion
@@ -113,16 +113,16 @@ namespace DataCollection.Runtime {
             if (!_userDatas.ContainsKey(userName)) {
                 _userDatas[userName] = new UserData
                 {
-                    UserName = userName,
-                    Positions = new List<Vector3>(),
-                    DamagePerTurn = new List<double>(),
-                    UsedWeaponPerTurn = new List<string>(),
-                    MovementPercentagePerTurn = new List<double>(),
-                    TurnDurations = new List<string>(),
-                    TotalKills = 0,
-                    Died = false,
-                    KillerPositionOnDeath = Vector3.zero,
-                    UserRatedMatchAsFair = false
+                    userName = userName,
+                    positions = new List<Vector3>(),
+                    damagePerTurn = new List<double>(),
+                    usedWeaponPerTurn = new List<string>(),
+                    movementPercentagePerTurn = new List<double>(),
+                    turnDurations = new List<string>(),
+                    totalKills = 0,
+                    died = false,
+                    killerPositionOnDeath = Vector3.zero,
+                    userRatedMatchAsFair = false
                 };
             }
         }
@@ -132,7 +132,7 @@ namespace DataCollection.Runtime {
         /// </summary>
         public void RecordUserPosition(string userName, Vector3 position) {
             if (!_userDatas.TryGetValue(userName, out UserData data)) return;
-            data.Positions.Add(position);
+            data.positions.Add(position);
             _userDatas[userName] = data;
         }
 
@@ -141,7 +141,7 @@ namespace DataCollection.Runtime {
         /// </summary>
         public void RecordDamage(string userName, double damage) {
             if (!_userDatas.TryGetValue(userName, out UserData data)) return;
-            data.DamagePerTurn.Add(damage);
+            data.damagePerTurn.Add(damage);
             _userDatas[userName] = data;
         }
 
@@ -150,7 +150,7 @@ namespace DataCollection.Runtime {
         /// </summary>
         public void RecordWeaponUsed(string userName, string weaponName) {
             if (!_userDatas.TryGetValue(userName, out UserData data)) return;
-            data.UsedWeaponPerTurn.Add(weaponName);
+            data.usedWeaponPerTurn.Add(weaponName);
             _userDatas[userName] = data;
         }
 
@@ -159,7 +159,7 @@ namespace DataCollection.Runtime {
         /// </summary>
         public void RecordMovementPercentage(string userName, double percentage) {
             if (!_userDatas.TryGetValue(userName, out UserData data)) return;
-            data.MovementPercentagePerTurn.Add(percentage);
+            data.movementPercentagePerTurn.Add(percentage);
             _userDatas[userName] = data;
         }
 
@@ -168,7 +168,7 @@ namespace DataCollection.Runtime {
         /// </summary>
         public void RecordTurnDuration(string userName, TimeSpan duration) {
             if (!_userDatas.TryGetValue(userName, out UserData data)) return;
-            data.TurnDurations.Add(duration.ToString(@"mm\:ss"));
+            data.turnDurations.Add(duration.ToString(@"mm\:ss"));
             _userDatas[userName] = data;
         }
 
@@ -177,7 +177,7 @@ namespace DataCollection.Runtime {
         /// </summary>
         public void RecordKill(string userName) {
             if (!_userDatas.TryGetValue(userName, out UserData data)) return;
-            data.TotalKills++;
+            data.totalKills++;
             _userDatas[userName] = data;
         }
 
@@ -186,8 +186,8 @@ namespace DataCollection.Runtime {
         /// </summary>
         public void RecordDeath(string userName, Vector3 killerPosition) {
             if (!_userDatas.TryGetValue(userName, out UserData data)) return;
-            data.Died = true;
-            data.KillerPositionOnDeath = killerPosition;
+            data.died = true;
+            data.killerPositionOnDeath = killerPosition;
             _userDatas[userName] = data;
         }
 
@@ -196,7 +196,7 @@ namespace DataCollection.Runtime {
         /// </summary>
         public void RecordFairnessRating(string userName, bool isFair) {
             if (!_userDatas.TryGetValue(userName, out UserData data)) return;
-            data.UserRatedMatchAsFair = isFair;
+            data.userRatedMatchAsFair = isFair;
             _userDatas[userName] = data;
         }
 
@@ -211,11 +211,11 @@ namespace DataCollection.Runtime {
             if (!_weaponDatas.ContainsKey(weaponName)) {
                 _weaponDatas[weaponName] = new WeaponData
                 {
-                    WeaponName = weaponName,
-                    UsageCount = 0,
-                    HitCount = 0,
-                    DamagePerUsage = new List<double>(),
-                    DistanceToTargetPerUsage = new List<double>()
+                    weaponName = weaponName,
+                    usageCount = 0,
+                    hitCount = 0,
+                    damagePerUsage = new List<double>(),
+                    distanceToTargetPerUsage = new List<double>()
                 };
             }
         }
@@ -227,12 +227,12 @@ namespace DataCollection.Runtime {
             if (!_weaponDatas.ContainsKey(weaponName)) InitializeWeapon(weaponName);
 
             WeaponData data = _weaponDatas[weaponName];
-            data.UsageCount++;
+            data.usageCount++;
             if (hit) {
-                data.HitCount++;
+                data.hitCount++;
             }
-            data.DamagePerUsage.Add(damage);
-            data.DistanceToTargetPerUsage.Add(distanceToTarget);
+            data.damagePerUsage.Add(damage);
+            data.distanceToTargetPerUsage.Add(distanceToTarget);
             _weaponDatas[weaponName] = data;
         }
 
@@ -246,9 +246,9 @@ namespace DataCollection.Runtime {
         public void SaveDataToJson() {
             var gameData = new GameData
             {
-                MatchData = _matchData,
-                UserDatas = new List<UserData>(_userDatas.Values),
-                WeaponDatas = new List<WeaponData>(_weaponDatas.Values)
+                matchData = _matchData,
+                userDatas = new List<UserData>(_userDatas.Values),
+                weaponDatas = new List<WeaponData>(_weaponDatas.Values)
             };
 
             string json = JsonUtility.ToJson(gameData, true);
