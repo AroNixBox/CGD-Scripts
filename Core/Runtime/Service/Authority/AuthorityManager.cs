@@ -36,16 +36,22 @@ namespace Core.Runtime.Authority {
             ServiceLocator.Register(this);
         }
 
-        void OnEnable() {
-            if (!ServiceLocator.TryGet(out GameManager gameManager)) return;
+        async void OnEnable() {
+            if (!ServiceLocator.TryGet(out GameManager gameManager)) {
+                await UniTask.WaitUntil(() => ServiceLocator.TryGet(out gameManager));
+                if (gameManager == null) return;
+            }
+
             gameManager.OnGameInit += HandleInit;
             gameManager.OnGameStart += StartFlow;
         }
 
         void OnDisable() {
-            if (!ServiceLocator.TryGet(out GameManager gameManager)) return;
-            gameManager.OnGameInit -= HandleInit;
-            gameManager.OnGameStart -= StartFlow;
+            if (!ServiceLocator.TryGet(out GameManager gameManager))
+                return;
+
+            gameManager.OnGameInit += HandleInit;
+            gameManager.OnGameStart += StartFlow;
         }
         
         void HandleInit(object sender, GameManager.GameInitEventArgs args) {
