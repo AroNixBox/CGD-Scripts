@@ -19,7 +19,7 @@ namespace UI.Runtime {
         }
 
         void PrepareStartGame() {
-            loadController.LoadSceneAsync("Playground_Nixon").Forget();
+            loadController.LoadSceneAsync("PlayTest").Forget();
         }
 
         void Start() {
