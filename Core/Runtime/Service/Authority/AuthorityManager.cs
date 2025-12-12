@@ -32,16 +32,20 @@ namespace Core.Runtime.Authority {
         // Track the last authority for GiveNextAuthority(), bec. _currentAuthority gets reset when in Bullet-Cam time
         int _nextAuthorityIndex;
 
-        void OnEnable() {
+        void Awake() {
             ServiceLocator.Register(this);
-            GameManager.OnGameInit += HandleInit;
-            GameManager.OnGameStart.AddListener(StartFlow);
+        }
+
+        void OnEnable() {
+            if (!ServiceLocator.TryGet(out GameManager gameManager)) return;
+            gameManager.OnGameInit += HandleInit;
+            gameManager.OnGameStart += StartFlow;
         }
 
         void OnDisable() {
-            ServiceLocator.Unregister<AuthorityManager>();
-            GameManager.OnGameInit -= HandleInit;
-            GameManager.OnGameStart.RemoveListener(StartFlow);
+            if (!ServiceLocator.TryGet(out GameManager gameManager)) return;
+            gameManager.OnGameInit -= HandleInit;
+            gameManager.OnGameStart -= StartFlow;
         }
         
         void HandleInit(object sender, GameManager.GameInitEventArgs args) {
