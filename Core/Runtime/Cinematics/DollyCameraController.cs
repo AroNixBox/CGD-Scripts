@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Core.Runtime.Cinematics {
     public class DollyCameraController : MonoBehaviour {
         [Tooltip("Negate Speed if you want to move backwards on the curve (From Last to First knot)")]
-        [SerializeField] int speed;
+        [SerializeField] float speed;
         [SerializeField, Required] CinemachineCamera cinemachineCamera;
         [SerializeField, Required] Transform cinemachineSplineEndPoint;
         [SerializeField, Required] CinemachineSplineDolly cinemachineSplineDolly;
@@ -19,29 +19,33 @@ namespace Core.Runtime.Cinematics {
         const int CameraActivePriority = 20;
         const int CameraInactivePriority = 0;
 
-        void OnEnable() {
+        async void OnEnable() {
             if (!performDolly) return;
-            if (!ServiceLocator.TryGet(out GameManager gameManager)) return;
-            gameManager.OnGameInit += HandleGameInit;
+            if (!ServiceLocator.TryGet(out GameManager gameManager)) {
+                await UniTask.WaitUntil(() => ServiceLocator.TryGet(out gameManager));
+                if (gameManager == null) return;
+            }
+            gameManager.OnPreGameInit += HandlePreGameInit;
         }
 
         void OnDisable() {
             if (!performDolly) return;
             if (!ServiceLocator.TryGet(out GameManager gameManager)) return;
-            gameManager.OnGameInit -= HandleGameInit;
+            gameManager.OnPreGameInit -= HandlePreGameInit;
         }
 
         /// <summary>
         /// Registers the dolly movement as an async initialization task.
         /// The GameManager will await this task before starting the game.
         /// </summary>
-        void HandleGameInit(object sender, GameManager.GameInitEventArgs args) {
-            // Use this object's lifetime as cancellation source.
+        void HandlePreGameInit(object sender, GameManager.PreGameInitEventArgs args) {
+            // Lifetime
             var token = this.GetCancellationTokenOnDestroy();
 
-            // Register camera movement as part of the init sequence.
+            // Dolly w/ pre game init task
             args.CompletionTasks.Add(MoveDollyToTarget(token));
         }
+
 
         async UniTask MoveDollyToTarget(CancellationToken token) {
             cinemachineCamera.Priority = CameraActivePriority;
