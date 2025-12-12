@@ -45,7 +45,7 @@ namespace Gameplay.Runtime.Player.Combat {
             _projectileForce = Mathf.Clamp(_projectileForce, _weaponData.GlobalWeaponData.MinProjectileForce, _weaponData.GlobalWeaponData.MaxProjectileForce);
         }
         
-        public Projectile FireWeapon(Action onProjectileExpired) {
+        public Projectile FireWeapon(Action<bool> onProjectileExpired) {
             // Projectile
             var projectileData = _weaponData.ProjectileData;
             var projectilePrefab = projectileData.projectilePrefab;

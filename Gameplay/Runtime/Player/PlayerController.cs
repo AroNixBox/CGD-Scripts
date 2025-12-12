@@ -61,6 +61,12 @@ namespace Gameplay.Runtime.Player {
                  "Perfect for responsive, arcade-style movement.\n" +
                  "<i>Tip: Enable for tight controls, disable for physics-heavy gameplay.</i>")]
         [SerializeField] bool useLocalMomentum;
+        
+        [Title("Combat")]
+        [SerializeField, Tooltip("Seconds the Player stays in CombatRecoveryState (and Bulletcam stays there too) after bullet expires")]
+        float postImpactDelay = 1.5f;
+
+        public float PostImpactDelay => postImpactDelay;
 
         [Title("Debug")] 
         [SerializeField] bool debugMode = true;

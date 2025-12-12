@@ -75,9 +75,24 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             _controller.AuthorityEntity.ResetAuthority();
         }
 
-        void EndTurn() {
+        // Active Impact = Seconds
+        void EndTurn(bool wasActiveImpact) {
+            if (wasActiveImpact) {
+                EndTurnWithDelay().Forget();
+            }
+            else {
+                EndTurnImmediate();
+            }
+        }
+
+        async UniTaskVoid EndTurnWithDelay() {
+            // Let player watch the impact effect before switching to next player
+            await UniTask.Delay(TimeSpan.FromSeconds(_controller.PostImpactDelay), ignoreTimeScale: true);
+            EndTurnImmediate();
+        }
+
+        void EndTurnImmediate() {
             _cameraControls.ResetBulletCamera();
-            // Entry Condition for next Player Substatemachine
             _controller.AuthorityEntity.GiveNextAuthority();
         }
 
