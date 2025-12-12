@@ -32,11 +32,15 @@ namespace Gameplay.Runtime.Player {
 
         Transform _tr;
         PlayerMover _mover;
+        MovementBudget _movementBudget;
+        
+        public MovementBudget MovementBudget => _movementBudget;
 
         [Header("Settings")]
         [Title("Movement")]
         [InfoBox("<i>When Changing the MovementSpeed, dont forget to change the Locomotion-Animation-State Thresholds on the Animator</i>", InfoMessageType.Warning)]
         [SerializeField] float movementSpeed = 3f;
+        [SerializeField] float maxMovementTimePerTurn = 5f;
         [SerializeField] float airFriction = .5f;
         [SerializeField] float airControlRate = 1.5f;
         [SerializeField] float groundFriction = 100f;
@@ -81,12 +85,16 @@ namespace Gameplay.Runtime.Player {
 
         public Action OnCombatStanceStateEntered = delegate { };
         public Action OnCombatStanceStateExited = delegate { };
+        public Action OnLocomotionStateEntered = delegate { };
+        public Action OnLocomotionStateExited = delegate { };
+        public event Action<float, float> OnMovementBudgetChanged = delegate { }; // currentTime, maxTime
 
         #endregion
         void Awake() {
             _tr = transform;
             _mover = GetComponent<PlayerMover>();
             AuthorityEntity = GetComponent<AuthorityEntity>();
+            _movementBudget = new MovementBudget(maxMovementTimePerTurn);
             
             SetupStateMachine();
         }
@@ -137,6 +145,17 @@ namespace Gameplay.Runtime.Player {
         }
         void Update() {
             _stateMachine.Tick(Time.deltaTime);
+            
+            // Update movement budget
+            var currentState = _stateMachine.GetCurrentState();
+            if (currentState is GroundedState groundedState) {
+                var currentSubState = groundedState.GetCurrentState();
+                if (currentSubState is LocomotionState) {
+                    bool isMoving = InputReader.MoveDirection.sqrMagnitude > 0.01f;
+                    _movementBudget.UpdateMovement(isMoving, Time.deltaTime);
+                    OnMovementBudgetChanged?.Invoke(_movementBudget.GetRemainingTime(), maxMovementTimePerTurn);
+                }
+            }
         }
 
         /// <summary>
@@ -298,7 +317,10 @@ namespace Gameplay.Runtime.Player {
                 horizontalMomentum = Vector3.ClampMagnitude(horizontalMomentum, EffectiveMovementSpeed);
             }
         }
-        Vector3 CalculateMovementVelocity() => CalculateMovementDirection() * EffectiveMovementSpeed;
+        Vector3 CalculateMovementVelocity() {
+            if (!_movementBudget.CanMove()) return Vector3.zero;
+            return CalculateMovementDirection() * EffectiveMovementSpeed;
+        }
         // Based on Camera and players input
         // TODO: Check if we need to Vector3.zero if no auth, because technicall we dont have any input then
         Vector3 CalculateMovementDirection() {
