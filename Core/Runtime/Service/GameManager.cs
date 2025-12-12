@@ -21,10 +21,18 @@ namespace Core.Runtime {
         public event EventHandler<GameInitEventArgs> OnGameInit;
         public event Action OnGameStart = delegate { };
 
-        void Awake() {
+        void Awake() { 
+            // TESTING PURPOSE
+            if (ServiceLocator.TryGet(out GameManager gameManager)) {
+                Debug.LogError($"Duplicate GameManager detected. Keeping '{gameManager.gameObject.name}' and destroying this instance.", transform);
+                Destroy(gameObject);
+                return;
+            }
+
             DontDestroyOnLoad(gameObject);
             ServiceLocator.Register(this);
         }
+
 
         void OnEnable() {
             SceneManager.sceneLoaded += OnSceneLoaded;
