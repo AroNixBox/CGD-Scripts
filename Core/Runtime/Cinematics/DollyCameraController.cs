@@ -1,5 +1,5 @@
-using System;
 using System.Threading;
+using Core.Runtime.Service;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using Unity.Cinemachine;
@@ -21,12 +21,14 @@ namespace Core.Runtime.Cinematics {
 
         void OnEnable() {
             if (!performDolly) return;
-            GameManager.OnGameInit += HandleGameInit;
+            if (!ServiceLocator.TryGet(out GameManager gameManager)) return;
+            gameManager.OnGameInit += HandleGameInit;
         }
 
         void OnDisable() {
             if (!performDolly) return;
-            GameManager.OnGameInit -= HandleGameInit;
+            if (!ServiceLocator.TryGet(out GameManager gameManager)) return;
+            gameManager.OnGameInit -= HandleGameInit;
         }
 
         /// <summary>

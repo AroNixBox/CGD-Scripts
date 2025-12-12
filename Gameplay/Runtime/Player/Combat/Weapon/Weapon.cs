@@ -20,7 +20,7 @@ namespace Gameplay.Runtime.Player.Combat {
                 throw new NullReferenceException("Trajectory Projector not available via Service Locator");
         }
 
-        public WeaponProperties GetWeaponProperties() {
+        WeaponProperties GetWeaponProperties() {
             return new WeaponProperties(
                 muzzlePoint.forward,
                 muzzlePoint.position
