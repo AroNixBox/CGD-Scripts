@@ -1,12 +1,9 @@
 ﻿using System;
-using Core.Runtime.Authority;
 using Gameplay.Runtime.Interfaces;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace Gameplay.Runtime.Player {
-    public class PlayerHealth : MonoBehaviour, IDamageable {
-        [SerializeField, Required] AuthorityEntity authorityEntity;
+namespace Gameplay.Runtime.Entity {
+    public class EntityHealth : MonoBehaviour, IDamageable {
         [SerializeField] uint maxHealth = 100;
         float _currentHealth;
         public event Action<float> OnCurrentHealthChanged = delegate { };
@@ -23,7 +20,7 @@ namespace Gameplay.Runtime.Player {
         public void TakeDamage(float damage) {
             _currentHealth -= damage;
             _currentHealth = Mathf.Clamp(_currentHealth, 0, _currentHealth);
-            Debug.Log("Player took damage: " + damage);
+            Debug.Log("Entity took damage: " + damage);
 
             if (_currentHealth <= 0) {
                 OnHealthDepleted?.Invoke(0);
@@ -34,7 +31,6 @@ namespace Gameplay.Runtime.Player {
         }
 
         void Die() {
-            authorityEntity.Unregister();
             Destroy(gameObject);
         }
     }

@@ -18,6 +18,8 @@ namespace Core.Runtime.Authority {
 
         [SerializeField] Vector3 spawnVfxOffset;
 
+        [SerializeField, Range(0f, 1f)] protected float volume = 1f;
+
         [SerializeField, Required] AudioSource audioSource;
 
         void OnEnable() {
@@ -47,7 +49,7 @@ namespace Core.Runtime.Authority {
         void PlaySpawnSfx() {
             if (spawnSfx == null) return;
             
-            audioSource.PlayOneShot(spawnSfx);
+            audioSource.PlayOneShot(spawnSfx, volume);
         }
     }
 }
