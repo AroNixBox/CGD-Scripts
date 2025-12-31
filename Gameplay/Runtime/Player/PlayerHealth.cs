@@ -21,15 +21,17 @@ namespace Gameplay.Runtime.Player {
         }
 
         public void TakeDamage(float damage) {
-            _currentHealth -= damage;
-            _currentHealth = Mathf.Clamp(_currentHealth, 0, _currentHealth);
-            Debug.Log("Player took damage: " + damage);
+            Debug.Log("Player taking damage: " + damage);
+            if (damage > 0) {
+                _currentHealth -= damage;
+                _currentHealth = Mathf.Clamp(_currentHealth, 0, _currentHealth);
 
-            if (_currentHealth <= 0) {
-                OnHealthDepleted?.Invoke(0);
-                Die();
-            } else {
-                OnCurrentHealthChanged?.Invoke(_currentHealth);
+                if (_currentHealth <= 0) {
+                    OnHealthDepleted?.Invoke(0);
+                    Die();
+                } else {
+                    OnCurrentHealthChanged?.Invoke(_currentHealth);
+                }
             }
         }
 

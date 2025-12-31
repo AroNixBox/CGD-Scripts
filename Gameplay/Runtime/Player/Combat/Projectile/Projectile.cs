@@ -57,18 +57,13 @@ namespace Gameplay.Runtime.Player.Combat {
             if (!IsSingleCollision()) return;
             if(_hasImpacted) return;
             _hasImpacted = true;
-
-            // Impact Strategy
-            var impactStrategy = _impactData.GetImpactStrategy();
-            impactStrategy.OnImpact(transform.position);
             
             CompleteImpact(wasActiveImpact: true);
         }
 
         // Called when Projectile-Action that is triggered by timer, timer = 0
         void OnProjectileTimerActionComplete() {
-            var impactStrategy = _impactData.GetImpactStrategy();
-            impactStrategy.OnImpact(transform.position);
+            CompleteImpact(wasActiveImpact: true);
         }
 
         void Update() {
@@ -101,6 +96,10 @@ namespace Gameplay.Runtime.Player.Combat {
         }
 
         void ApplyEffects() {
+            // Impact Strategy
+            var impactStrategy = _impactData.GetImpactStrategy();
+            impactStrategy.OnImpact(transform.position);
+
             // Sfx
             var impactSfx = _impactData.GetImpactSfx();
             PlayImpactSound(impactSfx);
