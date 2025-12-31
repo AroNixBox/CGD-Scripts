@@ -62,33 +62,7 @@ namespace Gameplay.Runtime.Player.Combat {
             var impactStrategy = _impactData.GetImpactStrategy();
             impactStrategy.OnImpact(transform.position);
             
-            // Sfx
-            var impactSfx = _impactData.GetImpactSfx();
-            PlayImpactSound(impactSfx);
-
-            // Vfx
-            var impactVfx = _impactData.GetImpactVfx();
-            CreateImpactEffect(impactVfx);
-            
-            Dispose(wasActiveImpact: true);
-        }
-
-        // TODO: Audio Manager
-        void PlayImpactSound(AudioClip clip) {
-            if (clip == null)
-                return;
-            
-            if (clip != null)
-                AudioSource.PlayClipAtPoint(clip, transform.position);
-        }
-        
-        // TODO: Effect-Manger & Pool?
-        void CreateImpactEffect(GameObject effectPrefab) {
-            if (effectPrefab == null)
-                return;
-            
-            if (effectPrefab != null)
-                Instantiate(effectPrefab, transform.position, Quaternion.identity);
+            CompleteImpact(wasActiveImpact: true);
         }
 
         // Called when Projectile-Action that is triggered by timer, timer = 0
@@ -102,9 +76,11 @@ namespace Gameplay.Runtime.Player.Combat {
             _projectileActionTimer?.Tick(Time.deltaTime);
         }
 
-        void OnFallbackExpired() => Dispose(wasActiveImpact: false);
+        void OnFallbackExpired() => CompleteImpact(wasActiveImpact: false);
 
-        void Dispose(bool wasActiveImpact) {
+        void CompleteImpact(bool wasActiveImpact) {
+            ApplyEffects();
+            
             if (_lifetimeTimer != null) {
                 _lifetimeTimer.OnTimerStop -= OnFallbackExpired;
                 _lifetimeTimer.Reset();
@@ -123,7 +99,35 @@ namespace Gameplay.Runtime.Player.Combat {
             _onProjectileExpired?.Invoke(wasActiveImpact);
             Destroy(gameObject);
         }
+
+        void ApplyEffects() {
+            // Sfx
+            var impactSfx = _impactData.GetImpactSfx();
+            PlayImpactSound(impactSfx);
+
+            // Vfx
+            var impactVfx = _impactData.GetImpactVfx();
+            CreateImpactEffect(impactVfx);
+        }
         
+        // TODO: Audio Manager
+        void PlayImpactSound(AudioClip clip) {
+            if (clip == null)
+                return;
+            
+            if (clip != null)
+                AudioSource.PlayClipAtPoint(clip, transform.position);
+        }
+        
+        // TODO: Effect-Manger & Pool?
+        void CreateImpactEffect(GameObject effectPrefab) {
+            if (effectPrefab == null)
+                return;
+            
+            if (effectPrefab != null)
+                Instantiate(effectPrefab, transform.position, Quaternion.identity);
+        }
+
         // Helper
         bool IsSingleCollision() => _impactData.GetProjectileActionTrigger() ==
                                     ProjectileImpactData.EProjectileActionTrigger.FirstCollision;
