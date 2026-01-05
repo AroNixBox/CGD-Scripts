@@ -70,7 +70,7 @@ public class MapObjectPlacement : MonoBehaviour {
 
             GameObject obj = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             obj.transform.position = new Vector3(inst.position[0], inst.position[2], inst.position[1]);
-            obj.transform.eulerAngles = new Vector3(inst.rotation[0], inst.rotation[2], inst.rotation[1]);
+            obj.transform.eulerAngles = new Vector3(-inst.rotation[0], -inst.rotation[2], inst.rotation[1]);
             obj.transform.localScale = new Vector3(inst.scale[0], inst.scale[2], inst.scale[1]);
             obj.transform.SetParent(parent.transform);
         }
