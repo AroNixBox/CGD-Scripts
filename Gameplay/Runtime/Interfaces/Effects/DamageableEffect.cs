@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.Events;
 
 namespace Gameplay.Runtime.Interfaces.Effects {
-    public class DamageThresholdEventInvoker : MonoBehaviour {
+    public class DamageableEffect : MonoBehaviour {
         [SerializeField] List<EffectMapping> effectMapping;
         readonly Dictionary<EffectMapping, int> _mappingsApplyCount = new();
         [SerializeField, Required, ValidateInput(nameof(ValidateDamageable), "Reference needs to implement IDamageable", InfoMessageType.Error)]
