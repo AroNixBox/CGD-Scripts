@@ -74,6 +74,10 @@ namespace Gameplay.Runtime.Player.Combat {
         void OnFallbackExpired() => CompleteImpact(wasActiveImpact: false);
 
         void CompleteImpact(bool wasActiveImpact) {
+            // Impact Strategy
+            var impactStrategy = _impactData.GetImpactStrategy();
+            impactStrategy.OnImpact(transform.position);
+            
             ApplyEffects();
             
             if (_lifetimeTimer != null) {
@@ -95,11 +99,7 @@ namespace Gameplay.Runtime.Player.Combat {
             Destroy(gameObject);
         }
 
-        void ApplyEffects() {
-            // Impact Strategy
-            var impactStrategy = _impactData.GetImpactStrategy();
-            impactStrategy.OnImpact(transform.position);
-
+        void ApplyEffects() { 
             // Sfx
             var impactSfx = _impactData.GetImpactSfx();
             PlayImpactSound(impactSfx);

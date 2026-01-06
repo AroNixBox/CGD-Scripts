@@ -47,13 +47,18 @@ namespace Core.Runtime.Authority {
             _authorityManager.GiveNextEntityAuthority();
         }
 
-        public void Unregister() {
+        void Unregister() {
             if (_authorityManager == null) {
                 Debug.LogError("AuthorityEntity not initialized properly");
                 return;
             }
             
             _authorityManager.UnregisterEntity(this);
+        }
+
+        // Hmmm, not sure bot that...
+        void OnDisable() {
+            Unregister();
         }
     }
 }

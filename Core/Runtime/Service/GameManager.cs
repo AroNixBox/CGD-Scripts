@@ -73,8 +73,10 @@ namespace Core.Runtime {
         }
         
         void OnDestroy() {
-            ServiceLocator.Unregister<GameManager>();
-            // Cleanup static events to avoid memory leaks during domain reloads
+            // Only unregister if this instance is the currently registered one.
+            if (ServiceLocator.TryGet(out GameManager current) && current == this)
+                ServiceLocator.Unregister<GameManager>();
+            // Cleanup events to avoid memory leaks during domain reloads
             OnPreGameInit = null;
             OnGameInit = null;
             OnGameStart = null;
