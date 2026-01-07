@@ -16,6 +16,10 @@ namespace Gameplay.Runtime.Player.Combat {
 
         Weapon _spawnedWeapon;
         
+        // Input control:
+        const float PressThreshold = 0.5f;
+        bool _inputReset = true;
+        
         public event Action<WeaponData> OnWeaponDataAdded = delegate { };
         public event Action<WeaponData> OnWeaponDataSelected = delegate { };
         public event Action<WeaponData, int> OnAmmoChanged = delegate { }; // Weapon | Amount
@@ -44,6 +48,25 @@ namespace Gameplay.Runtime.Player.Combat {
 
                 OnWeaponDataAdded.Invoke(weaponData);
                 OnAmmoChanged.Invoke(weaponData, loadoutWeaponLoadoutEntry.Value);
+            }
+        }
+        // TODO: Umbauen auf eine Methode die generell alle Vector2 horizontal und vertikal auffängt und dann differentiated
+        public void SelectWeapon(Vector2 input) {
+            if (input.x > PressThreshold) {
+                if (_inputReset) {
+                    SelectNextWeapon();
+                    _inputReset = false;
+                }
+            }
+            else if (input.x < -PressThreshold) {
+                if (_inputReset) {
+                    SelectPreviousWeapon();
+                    _inputReset = false;
+                }
+            }
+            else {
+                // Input ist fast 0, Reset für nächsten Druck erlauben
+                _inputReset = true;
             }
         }
         public void SelectNextWeapon() {
