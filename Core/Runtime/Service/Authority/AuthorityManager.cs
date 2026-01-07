@@ -14,9 +14,12 @@ namespace Core.Runtime.Authority {
     /// </summary>
     public class AuthorityManager : MonoBehaviour {
         [SerializeField, Required] AuthorityEntity authorityEntityPrefab;
-        [SerializeField, Required] List<Transform> authorityEntitiesSpawnPoints; 
+        [SerializeField, Required] List<Transform> authorityEntitiesSpawnPoints;
+        [SerializeField, Tooltip("Delay in seconds between each entity spawn")]
+        float spawnInterval = 1.5f;
         [SerializeField] int startIndex;
         readonly List<AuthorityEntity> _authorityEntities = new();
+        readonly List<Transform> _availableSpawnPoints = new();
 
         #region Events
 
@@ -32,34 +35,65 @@ namespace Core.Runtime.Authority {
         // Track the last authority for GiveNextAuthority(), bec. _currentAuthority gets reset when in Bullet-Cam time
         int _nextAuthorityIndex;
 
-        void OnEnable() {
+        void Awake() {
             ServiceLocator.Register(this);
-            GameManager.OnGameInit += HandleInit;
-            GameManager.OnGameStart.AddListener(StartFlow);
+        }
+
+        async void OnEnable() {
+            if (!ServiceLocator.TryGet(out GameManager gameManager)) {
+                await UniTask.WaitUntil(() => ServiceLocator.TryGet(out gameManager));
+                if (gameManager == null) return;
+            }
+
+            gameManager.OnGameInit += HandleInit;
+            gameManager.OnGameStart += StartFlow;
         }
 
         void OnDisable() {
-            ServiceLocator.Unregister<AuthorityManager>();
-            GameManager.OnGameInit -= HandleInit;
-            GameManager.OnGameStart.RemoveListener(StartFlow);
+            if (!ServiceLocator.TryGet(out GameManager gameManager))
+                return;
+
+            gameManager.OnGameInit += HandleInit;
+            gameManager.OnGameStart += StartFlow;
         }
         
         void HandleInit(object sender, GameManager.GameInitEventArgs args) {
             args.CompletionTasks.Add(InitializeEntities(args.UserDatas));
         }
 
-        UniTask InitializeEntities(List<UserData> userDatas) {
+        async UniTask InitializeEntities(List<UserData> userDatas) {
+            // Initialize available spawnpoints pool
+            _availableSpawnPoints.Clear();
+            _availableSpawnPoints.AddRange(authorityEntitiesSpawnPoints);
+
             foreach (var userData in userDatas) {
+                // Get unique spawnpoint (recycle if all are used)
+                var spawnPoint = GetNextSpawnPoint();
+                
                 // Spawn Entity & Init
-                var spawnPoint = authorityEntitiesSpawnPoints[UnityEngine.Random.Range(0, authorityEntitiesSpawnPoints.Count - 1)];
                 var spawnedEntity = Instantiate(authorityEntityPrefab, spawnPoint.position, spawnPoint.rotation);
                 spawnedEntity.Initialize(this, userData);
                 
                 _authorityEntities.Add(spawnedEntity);
                 OnEntitySpawned.Invoke(spawnedEntity);
+                
+                // Wait before spawning next entity
+                await UniTask.Delay(TimeSpan.FromSeconds(spawnInterval), ignoreTimeScale: false);
             }
-            
-            return UniTask.CompletedTask;
+        }
+
+        Transform GetNextSpawnPoint() {
+            // If all spawnpoints used, refill the pool
+            if (_availableSpawnPoints.Count == 0) {
+                _availableSpawnPoints.AddRange(authorityEntitiesSpawnPoints);
+            }
+
+            // Pick random from available and remove it
+            var randomIndex = UnityEngine.Random.Range(0, _availableSpawnPoints.Count);
+            var selectedSpawnPoint = _availableSpawnPoints[randomIndex];
+            _availableSpawnPoints.RemoveAt(randomIndex);
+
+            return selectedSpawnPoint;
         }
         
         void StartFlow() {

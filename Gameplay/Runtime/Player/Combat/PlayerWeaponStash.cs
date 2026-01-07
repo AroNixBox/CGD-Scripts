@@ -98,7 +98,7 @@ namespace Gameplay.Runtime.Player.Combat {
         }
         
         // In WeaponStash
-        public bool TryFire(Action onProjectileExpired, out Projectile projectile) {
+        public bool TryFire(Action<bool> onProjectileExpired, out Projectile projectile) {
             projectile = null;
             var weapon = GetSpawnedWeapon();
             if (weapon == null) {

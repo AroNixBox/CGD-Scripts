@@ -1,4 +1,5 @@
-﻿using Core.Runtime.Backend;
+﻿using System;
+using Core.Runtime.Backend;
 using UnityEngine;
 
 namespace Core.Runtime.Authority {
@@ -10,9 +11,12 @@ namespace Core.Runtime.Authority {
         public UserData UserData => _userData;
         UserData _userData;
 
+        public event Action OnSpawned = delegate { };
+
         public void Initialize(AuthorityManager authManager, UserData userData) {
             _authorityManager = authManager;
             _userData = userData;
+            OnSpawned?.Invoke();
         }
         
         public bool HasAuthority() {
@@ -43,13 +47,18 @@ namespace Core.Runtime.Authority {
             _authorityManager.GiveNextEntityAuthority();
         }
 
-        public void Unregister() {
+        void Unregister() {
             if (_authorityManager == null) {
                 Debug.LogError("AuthorityEntity not initialized properly");
                 return;
             }
             
             _authorityManager.UnregisterEntity(this);
+        }
+
+        // Hmmm, not sure bot that...
+        void OnDisable() {
+            Unregister();
         }
     }
 }

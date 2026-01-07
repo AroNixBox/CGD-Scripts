@@ -39,17 +39,19 @@ namespace Gameplay.Runtime.Player.Camera {
         // TODO: Set the new camera forward to the old camera forward to avoid mismatch
         public async UniTask SwitchToControllableCameraMode(ECameraMode mode) {
             if (mode == ECameraMode.FirstPerson) {
-                firstPersonCamera.transform.forward = thirdPersonCamera.transform.forward;
+                // Sync camera state before blend to avoid rotation jump
+                SyncCameraRotation(firstPersonCamera, thirdPersonCamera);
                 SetCameraPriorities(firstPerson: HighPriority, thirdPerson: LowPriority);
-            } 
+            }
             else if (mode == ECameraMode.ThirdPerson) {
-                thirdPersonCamera.transform.forward = firstPersonCamera.transform.forward;
+                // Sync camera state before blend to avoid rotation jump
+                SyncCameraRotation(thirdPersonCamera, firstPersonCamera);
                 SetCameraPriorities(firstPerson: LowPriority, thirdPerson: HighPriority);
             }
-
+            
             await UniTask.Yield(PlayerLoopTiming.PostLateUpdate);
     
-            // Jetzt warte bis der Blend fertig ist
+            // Wait until blend ends
             await UniTask.WaitUntil(() => !_brain.IsBlending);
 
             return;
@@ -57,6 +59,14 @@ namespace Gameplay.Runtime.Player.Camera {
             void SetCameraPriorities(int firstPerson, int thirdPerson) {
                 firstPersonCamera.Priority = firstPerson;
                 thirdPersonCamera.Priority = thirdPerson;
+            }
+            
+            void SyncCameraRotation(CinemachineCamera target, CinemachineCamera source) {
+                // Force Cinemachine to update the source camera's state first
+                source.ForceCameraPosition(source.State.GetFinalPosition(), source.State.GetFinalOrientation());
+                
+                // Then sync the target camera to match
+                target.ForceCameraPosition(target.transform.position, source.State.GetFinalOrientation());
             }
         }
         public void ResetControllableCameras() {

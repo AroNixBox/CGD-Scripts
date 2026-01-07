@@ -7,16 +7,21 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
     /// Awaiting until authority is granted.
     /// </summary>
     public class AwaitingAuthorityState : IState {
-        PlayerCameraControls _cameraControls;
+        readonly PlayerCameraControls _cameraControls;
+        readonly PlayerController _controller;
+        
         public AwaitingAuthorityState(PlayerController controller) {
             _cameraControls = controller.PlayerCameraControls;
+            _controller = controller;
         }
 
         public void OnEnter() {
             _cameraControls.ResetControllableCameras();
         }
         public void Tick(float deltaTime) { }
-        public void OnExit() { }
+        public void OnExit() {
+            _controller.MovementBudget.Reset();
+        }
         public Color GizmoState() {
             return Color.softYellow;
         }
