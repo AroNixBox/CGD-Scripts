@@ -1,41 +1,56 @@
 using System;
 using System.Collections.Generic;
+using Gameplay.Runtime.Player.Combat;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.UIElements;
 
 namespace UI.Runtime.Level {
     public class WeaponSelectionView : MonoBehaviour {
         [SerializeField, Required] RectTransform weaponSelectionMenu;
         [SerializeField, Required] ScrollRect weaponSelectionScroll;
+        [SerializeField, Required] RectTransform weaponCategoriesParent;
+        
+        [SerializeField, Required] WeaponSelectionCategory weaponCategoryPrefab;
         [SerializeField, Required] WeaponSelectionEntry weaponEntryPrefab;
-        [SerializeField, Required] RectTransform weaponEntriesParent;
-        readonly List<WeaponSelectionEntry> _weaponEntries = new();
-        public void SpawnWeaponSelectionEntry(Sprite iconImage) {
-            var weaponEntryInstance = Instantiate(weaponEntryPrefab, weaponEntriesParent.transform);
-            weaponEntryInstance.SetIconImage(iconImage);
-            _weaponEntries.Add(weaponEntryInstance);
+
+        readonly Dictionary<string, WeaponSelectionCategory> _categories = new();
+
+        public void AddWeapon(string categoryName, WeaponData data) {
+            // 1. Get or Create Category
+            if (!_categories.TryGetValue(categoryName, out var category)) {
+                category = Instantiate(weaponCategoryPrefab, weaponCategoriesParent);
+                category.DisableOutline(); // Default state
+                _categories.Add(categoryName, category);
+            }
+
+            // 2. Add entry to category
+            category.AddEntry(weaponEntryPrefab, data);
         }
 
-        public void EnableWeaponEntryOutline(int index) {
-            var selectedEntry = _weaponEntries[index];
+        public void UpdateWeaponAmmo(string categoryName, WeaponData data, int amount) {
+            if (_categories.TryGetValue(categoryName, out var category)) {
+                category.UpdateAmmo(data, amount);
+            }
+        }
+        
+        public void SelectWeapon(string categoryName, WeaponData data) {
+            if (!_categories.TryGetValue(categoryName, out var category)) return;
             
-            // Outline
-            _weaponEntries.ForEach(e => e.DeactivateOutline());
-            selectedEntry.ActivateOutline();
-            
-            // Go To
-            var targetRect = selectedEntry.GetComponent<RectTransform>();
-            if (targetRect == null) throw new NotSupportedException("WeaponSelectionEntry has no Rect?!");
-            ScrollToElement(targetRect);
+            // Deselect all
+            foreach (var cat in _categories.Values) {
+                cat.DisableOutline();
+            }
+            // Select target category
+            category.EnableOutline();
+                
+            // Select specific entry in category (to show on screen, reorder)
+            category.SelectEntry(data);
+                
+            // Scroll to category
+            ScrollToElement(category.RectTransform);
         }
-
-        public void UpdateWeaponAmmo(int index, int amount) {
-            var selectedEntry = _weaponEntries[index];
-            selectedEntry.SetAmmo(amount);
-        }
-
+        
         void ScrollToElement(RectTransform target) {
             Canvas.ForceUpdateCanvases();
         
@@ -48,7 +63,7 @@ namespace UI.Runtime.Level {
             var targetLeftEdge = targetViewportPos.x + targetRect.xMin;
             var targetRightEdge = targetViewportPos.x + targetRect.xMax;
         
-            // Viewport-Grenzen
+            // Viewport-Edges
             var viewportLeftEdge = viewportRect.xMin;
             var viewportRightEdge = viewportRect.xMax;
         
@@ -68,9 +83,9 @@ namespace UI.Runtime.Level {
                 return;
             }
 
-            weaponEntriesParent.localPosition = new Vector2(
-                weaponEntriesParent.localPosition.x + offset,
-                weaponEntriesParent.localPosition.y
+            weaponCategoriesParent.localPosition = new Vector2(
+                weaponCategoriesParent.localPosition.x + offset,
+                weaponCategoriesParent.localPosition.y
             );
         }
 

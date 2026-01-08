@@ -1,54 +1,52 @@
-using System;
-using System.Collections.Generic;
 using Gameplay.Runtime.Player;
 using Gameplay.Runtime.Player.Combat;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace UI.Runtime.Level {
-    // TODO: Might need rework if weapons pickable in runtime
+    // Controller spawns entries and categories, so he can create a category when theres a "first entry"
     public class WeaponSelectionController : MonoBehaviour {
         [SerializeField, Required] PlayerController controller;
         [SerializeField, Required] PlayerWeaponStash weaponStash;
         [SerializeField, Required] WeaponSelectionView view;
-        readonly List<WeaponData> _weaponDatas = new();
-
+        
         void OnEnable() {
-            weaponStash.OnWeaponDataAdded += AddWeapon;
-            weaponStash.OnWeaponDataSelected += SelectWeaponInUI;
-            weaponStash.OnAmmoChanged += UpdateWeaponAmmo;
-            controller.OnCombatStanceStateEntered += view.ShowUI;
-            controller.OnCombatStanceStateExited += view.HideUI;
+            if (weaponStash != null) {
+                weaponStash.OnWeaponDataAdded += AddWeapon;
+                weaponStash.OnWeaponDataSelected += SelectWeaponInUI;
+                weaponStash.OnAmmoChanged += UpdateWeaponAmmo;
+            }
+            if (controller != null) {
+                controller.OnCombatStanceStateEntered += view.ShowUI;
+                controller.OnCombatStanceStateExited += view.HideUI;
+            }
         }
 
         // By default UI is off
         void Start() => view.HideUI();
 
         void OnDisable() {
-            weaponStash.OnWeaponDataAdded -= AddWeapon;
-            weaponStash.OnWeaponDataSelected -= SelectWeaponInUI;
-            weaponStash.OnAmmoChanged -= UpdateWeaponAmmo;
-            controller.OnCombatStanceStateEntered -= view.ShowUI;
-            controller.OnCombatStanceStateExited -= view.HideUI;
+            if (weaponStash != null) {
+                weaponStash.OnWeaponDataAdded -= AddWeapon;
+                weaponStash.OnWeaponDataSelected -= SelectWeaponInUI;
+                weaponStash.OnAmmoChanged -= UpdateWeaponAmmo;
+            }
+            if (controller != null) {
+                controller.OnCombatStanceStateEntered -= view.ShowUI;
+                controller.OnCombatStanceStateExited -= view.HideUI;
+            }
         }
 
-        void AddWeapon(WeaponData weaponData) {
-            view.SpawnWeaponSelectionEntry(weaponData.MenuIcon);
-            _weaponDatas.Add(weaponData);
+        void AddWeapon(string category, WeaponData weaponData) {
+            view.AddWeapon(category, weaponData);
         }
 
-        void UpdateWeaponAmmo(WeaponData weaponData, int ammo) {
-            if (!_weaponDatas.Contains(weaponData))
-                throw new ArgumentOutOfRangeException(weaponData.name, "Tried changing the Ammo on a weapon that is not in the UI");
-            
-            view.UpdateWeaponAmmo(_weaponDatas.IndexOf(weaponData), ammo);
+        void UpdateWeaponAmmo(string category, WeaponData weaponData, int amount) {
+            view.UpdateWeaponAmmo(category, weaponData, amount);
         }
 
-        void SelectWeaponInUI(WeaponData weaponData) {
-            if (!_weaponDatas.Contains(weaponData))
-                throw new NullReferenceException("Weapon was not initialized in WeaponUI");
-            
-            view.EnableWeaponEntryOutline(_weaponDatas.IndexOf(weaponData));
+        void SelectWeaponInUI(string category, WeaponData weaponData) {
+            view.SelectWeapon(category, weaponData);
         }
     }
 }

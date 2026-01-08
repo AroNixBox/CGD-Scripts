@@ -2,150 +2,220 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Sirenix.OdinInspector;
-using Sirenix.Utilities;
 using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Combat {
     public class PlayerWeaponStash : MonoBehaviour {
         [SerializeField, Required] WeaponLoadout loadout;
-        readonly Dictionary<WeaponData, int> _runtimeLoadout = new();
-        
-        // TODO: We Could have 1 WeaponSocket per weapon
         [SerializeField, Required] Transform weaponSocket;
-        int _currentWeaponIndex;
 
-        Weapon _spawnedWeapon;
+        readonly Dictionary<string, List<(WeaponData weaponData, int ammo)>> _weaponCategoryDatasMapping = new();
         
-        // Input control:
+        WeaponData _currentWeaponData;
+        Weapon _spawnedWeapon; 
+
+        // Input control
         const float PressThreshold = 0.5f;
         bool _inputReset = true;
-        
-        public event Action<WeaponData> OnWeaponDataAdded = delegate { };
-        public event Action<WeaponData> OnWeaponDataSelected = delegate { };
-        public event Action<WeaponData, int> OnAmmoChanged = delegate { }; // Weapon | Amount
-        
-        WeaponData[] Weapons => _runtimeLoadout.Keys.ToArray();
 
-        void Awake() {
-            if (loadout == null) throw new NullReferenceException("Weapon Loadout neets to be referenced");
-            var weaponLoadoutEntries = loadout.WeaponLoadoutEntries;
-            if (weaponLoadoutEntries == null || weaponLoadoutEntries.Length < 1)
-                throw new NullReferenceException("Weapon Loadout Entries cant be empty");
-            
-            foreach (var loadoutEntry in loadout.WeaponLoadoutEntries) {
-                _runtimeLoadout.TryAdd(loadoutEntry.WeaponData, loadoutEntry.Ammunition);
-            }
-        }
+        // Events
+        public event Action<string, WeaponData> OnWeaponDataAdded = delegate { };
+        public event Action<string, WeaponData> OnWeaponDataSelected = delegate { };
+        public event Action<string, WeaponData, int> OnAmmoChanged = delegate { };
 
-        // Init UI
         void Start() {
-            // Tell other systems bout all the Weapons the player has in its layout
-            if (loadout == null) throw new NullReferenceException("Weapon Loadout neets to be referenced");
-            foreach (var loadoutWeaponLoadoutEntry in _runtimeLoadout) {
-                var weaponData = loadoutWeaponLoadoutEntry.Key;
-                if(weaponData == null) 
-                    throw new NullReferenceException("Weapon Data needs to be referenced in Loadout-Entry");
+            if (loadout == null) throw new NullReferenceException("Weapon Loadout needs to be referenced");
 
-                OnWeaponDataAdded.Invoke(weaponData);
-                OnAmmoChanged.Invoke(weaponData, loadoutWeaponLoadoutEntry.Value);
+            foreach (var entry in loadout.WeaponLoadoutEntries) {
+                if (entry.WeaponData == null) continue;
+
+                // TODO: Also differentiate in Damage! Or Get it via Dropdown!
+                // 1. Get the category via impact strategy
+                var strategy = entry.WeaponData.ProjectileData.impactData.GetImpactStrategy();
+                // Fallback, null strategory, map under uncategorized
+                string typeKey = strategy != null ? strategy.GetType().ToString() : "Uncategorized";
+
+                // 2. Add List in Dict if no entry yet for that category
+                if (!_weaponCategoryDatasMapping.ContainsKey(typeKey)) {
+                    _weaponCategoryDatasMapping[typeKey] = new List<(WeaponData, int)>();
+                }
+                
+                // 3. Add weapon and ammunition from the loadout
+                _weaponCategoryDatasMapping[typeKey].Add((entry.WeaponData, entry.Ammunition));
+                
+                // Events
+                OnWeaponDataAdded.Invoke(typeKey, entry.WeaponData);
+                OnAmmoChanged.Invoke(typeKey, entry.WeaponData, entry.Ammunition);
+            }
+
+            // Set first weapon of first category
+            if (_weaponCategoryDatasMapping.Count > 0) {
+                 var firstGroup = _weaponCategoryDatasMapping.Values.FirstOrDefault();
+                 if (firstGroup is { Count: > 0 }) {
+                     _currentWeaponData = firstGroup[0].weaponData;
+                 }
             }
         }
-        // TODO: Umbauen auf eine Methode die generell alle Vector2 horizontal und vertikal auffängt und dann differentiated
+
         public void SelectWeapon(Vector2 input) {
-            if (input.x > PressThreshold) {
-                if (_inputReset) {
-                    SelectNextWeapon();
-                    _inputReset = false;
+            if (_weaponCategoryDatasMapping.Count == 0) return;
+
+            var xActive = Mathf.Abs(input.x) > PressThreshold;
+            var yActive = Mathf.Abs(input.y) > PressThreshold;
+
+            if (!xActive && !yActive) {
+                _inputReset = true;
+                return;
+            }
+
+            if (!_inputReset) return;
+
+            // Snapshot <WeaponData, Ammo>
+            var groups = _weaponCategoryDatasMapping.Values.ToList();
+
+            var currentGroupIdx = -1;
+            var currentWeaponIdx = -1;
+
+            // Get index of that weapon
+            if (_currentWeaponData != null) {
+                for (var i = 0; i < groups.Count; i++) {
+                    var groupList = groups[i];
+                    // Get fitting weapon data
+                    for (int j = 0; j < groupList.Count; j++) {
+                        if (groupList[j].weaponData == _currentWeaponData) {
+                            currentGroupIdx = i;
+                            currentWeaponIdx = j;
+                            goto FoundIndices; // Break both loops
+                        }
+                    }
                 }
             }
-            else if (input.x < -PressThreshold) {
-                if (_inputReset) {
-                    SelectPreviousWeapon();
-                    _inputReset = false;
-                }
+            FoundIndices:
+
+            // Fallback at invalid, no weapondata found, just select first.
+            if (currentGroupIdx == -1) {
+                currentGroupIdx = 0;
+                currentWeaponIdx = 0;
+            }
+
+            WeaponData nextSelection = null;
+
+            if (xActive) {
+                // Horizontal: Switch Category
+                int nextGroupIdx = input.x > 0
+                    ? (currentGroupIdx + 1) % groups.Count
+                    : (currentGroupIdx - 1 + groups.Count) % groups.Count;
+
+                var nextGroup = groups[nextGroupIdx];
+                if (nextGroup.Count > 0)
+                    nextSelection = nextGroup[0].weaponData;
             }
             else {
-                // Input ist fast 0, Reset für nächsten Druck erlauben
-                _inputReset = true;
+                // Vertical: Switch Gun in selected category
+                var group = groups[currentGroupIdx];
+                if (group.Count > 1) {
+                    // Up (>0): Prev, Down (<0): Next Gun
+                    var nextWeaponIdx = input.y > 0
+                        ? (currentWeaponIdx - 1 + group.Count) % group.Count
+                        : (currentWeaponIdx + 1) % group.Count;
+                    nextSelection = group[nextWeaponIdx].weaponData;
+                }
+            }
+
+            if (nextSelection != null && nextSelection != _currentWeaponData) {
+                SelectWeapon(nextSelection);
+                _inputReset = false;
             }
         }
-        public void SelectNextWeapon() {
-            var nextIndex = GetNextIndex();
-            SelectWeapon(nextIndex);
+
+        public void SelectCurrentWeapon() {
+             if(_currentWeaponData != null)
+                 SelectWeapon(_currentWeaponData);
         }
-        
-        public void SelectPreviousWeapon() {
-            var previousIndex = GetPreviousIndex();
-            SelectWeapon(previousIndex);
-        }
-        // "Respawn" the weapon which is still selected
-        public void SelectCurrentWeapon() => SelectWeapon(_currentWeaponIndex);
-        void SelectWeapon(int index) {
-            if (Weapons.Length is 0 or 1) // No Scroll needed
+
+        void SelectWeapon(WeaponData weaponData) {
+            if (weaponData == null) return;
+
+            string foundCategory = null;
+
+            // Find the WeaponData
+            foreach (var kvp in _weaponCategoryDatasMapping) {
+                if (kvp.Value.Any(x => x.weaponData == weaponData)) {
+                    foundCategory = kvp.Key;
+                    break;
+                }
+            }
+
+            // Weapon we are trying to find is not in the Stash
+            if (foundCategory == null) {
+                Debug.LogError("Weapon you tried to select is not in the stash.. Shouldnt happen");
                 return;
-            
+            }
+
             DespawnSelectedWeapon();
-            _currentWeaponIndex = index;
-            OnWeaponDataSelected.Invoke(GetCurrentWeaponData());
+            
+            _currentWeaponData = weaponData;
+            OnWeaponDataSelected.Invoke(foundCategory, _currentWeaponData);
+            
             SpawnSelectedWeapon();
         }
-        
+
+
         void SpawnSelectedWeapon() {
-            var currentWeaponPrefab = GetCurrentWeaponData().Weapon;
+            if (_currentWeaponData == null) return;
+            var currentWeaponPrefab = _currentWeaponData.Weapon;
             _spawnedWeapon = Instantiate(currentWeaponPrefab, weaponSocket);
-            _spawnedWeapon.Init(GetCurrentWeaponData());
-        }
-        
-        int GetNextIndex() {
-            if(Weapons.Length == 0)
-                throw new UnassignedReferenceException("Weapons Array not assigned");
-            
-            return _currentWeaponIndex < Weapons.Length - 1
-                ? _currentWeaponIndex + 1
-                : 0;
+            _spawnedWeapon.Init(_currentWeaponData);
         }
 
-        int GetPreviousIndex() =>
-            _currentWeaponIndex == 0
-                ? Weapons.Length - 1
-                : _currentWeaponIndex - 1;
+        public WeaponData GetCurrentWeaponData() => _currentWeaponData;
 
-        // Use for static Data-Information
-        WeaponData GetCurrentWeaponData() {
-            if(Weapons.Length == 0)
-                throw new UnassignedReferenceException("Weapons Array not assigned");
-            
-            return Weapons[_currentWeaponIndex];
-        }
-        
-        // In WeaponStash
         public bool TryFire(Action<bool> onProjectileExpired, out Projectile projectile) {
             projectile = null;
             var weapon = GetSpawnedWeapon();
             if (weapon == null) {
-                Debug.LogError("Cannot fire: No weapon is currently spawned. Ensure a weapon is selected before attempting to fire.");
+                Debug.LogError("Cannot fire: No weapon spawned.");
                 return false;
             }
-        
-            var weaponData = GetCurrentWeaponData();
-            if (!_runtimeLoadout.TryGetValue(weaponData, out var ammo) || ammo <= 0) {
-                // No Ammo
-                return false;
+
+            // Get fitting tuple to find ammunition
+            string targetCategory = null;
+            List<(WeaponData weaponData, int ammo)> targetList = null;
+            int targetIndex = -1;
+
+            // Get Category
+            foreach (var kvp in _weaponCategoryDatasMapping) {
+                var list = kvp.Value;
+                for (int i = 0; i < list.Count; i++) {
+                    if (list[i].weaponData == _currentWeaponData) {
+                        targetCategory = kvp.Key;
+                        targetList = list;
+                        targetIndex = i;
+                        break;
+                    }
+                }
+                if (targetList != null) break;
             }
-        
-            _runtimeLoadout[weaponData]--;
+
+            // Invalid
+            if (targetList == null || targetIndex == -1 || targetCategory == null) return false;
+
+            var entry = targetList[targetIndex];
+            if (entry.ammo <= 0) return false;
+
+            // decrease local ammo variable and override the tuple with the ammo
+            entry.ammo--;
+            targetList[targetIndex] = entry;
+
             projectile = weapon.FireWeapon(onProjectileExpired);
-            // TODO:
-            // Inform UI
-            OnAmmoChanged?.Invoke(weaponData, _runtimeLoadout[weaponData]);
+            
+            
+            OnAmmoChanged?.Invoke(targetCategory, entry.weaponData, entry.ammo);
             return true;
         }
-        
 
-        // Use for runtime Information like Transforms that move
-        public Weapon GetSpawnedWeapon() {
-            return _spawnedWeapon;
-        }
+
+        public Weapon GetSpawnedWeapon() => _spawnedWeapon;
 
         public void DespawnSelectedWeapon() {
             if(_spawnedWeapon != null)
