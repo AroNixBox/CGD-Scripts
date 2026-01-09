@@ -51,7 +51,7 @@ namespace Gameplay.Runtime.Player.Combat {
             var projectilePrefab = projectileData.projectilePrefab;
             
             // Spawned Weapon
-            var projectile = Instantiate(projectilePrefab, muzzlePoint.position, Quaternion.identity);
+            var projectile = Instantiate(projectilePrefab, muzzlePoint.position, muzzlePoint.rotation);
             projectile.Init(
                 projectileData.mass, 
                 projectileData.drag, 
