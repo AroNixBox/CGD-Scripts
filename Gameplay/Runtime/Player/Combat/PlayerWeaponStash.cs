@@ -10,6 +10,7 @@ namespace Gameplay.Runtime.Player.Combat {
         [SerializeField, Required] Transform weaponSocket;
 
         readonly Dictionary<string, List<(WeaponData weaponData, int ammo)>> _weaponCategoryDatasMapping = new();
+        readonly Dictionary<string, int> _lastSelectedIndexPerCategory = new();
         
         WeaponData _currentWeaponData;
         Weapon _spawnedWeapon; 
@@ -125,8 +126,12 @@ namespace Gameplay.Runtime.Player.Combat {
                     : (currentGroupIdx - 1 + groups.Count) % groups.Count;
 
                 var nextGroup = groups[nextGroupIdx];
-                if (nextGroup.Count > 0)
-                    nextSelection = nextGroup[0].weaponData;
+                var categoryKey = _weaponCategoryDatasMapping.Keys.ElementAt(nextGroupIdx);
+
+                // Get last index for that category if there was one
+                int lastIndex = _lastSelectedIndexPerCategory.GetValueOrDefault(categoryKey, 0);
+                if (nextGroup.Count > 0 && lastIndex < nextGroup.Count)
+                    nextSelection = nextGroup[lastIndex].weaponData;
             }
             else {
                 // Vertical: Switch Gun in selected category
@@ -169,6 +174,16 @@ namespace Gameplay.Runtime.Player.Combat {
                 Debug.LogError("Weapon you tried to select is not in the stash.. Shouldnt happen");
                 return;
             }
+            
+            // Save index for that category, so we can return to it later
+            var categoryList = _weaponCategoryDatasMapping[foundCategory];
+            for (int i = 0; i < categoryList.Count; i++) {
+                if (categoryList[i].weaponData == weaponData) {
+                    _lastSelectedIndexPerCategory[foundCategory] = i;
+                    break;
+                }
+            }
+            
 
             DespawnSelectedWeapon();
             
