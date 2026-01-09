@@ -47,9 +47,11 @@ namespace Core.Runtime.Authority {
             _authorityManager.GiveNextEntityAuthority();
         }
 
+        // TODO: Not optimal, race condition.. Find another way of doing it...
+        // Should be done via Health when entity dies and as fallback the unregister
         void Unregister() {
             if (_authorityManager == null) {
-                Debug.LogError("AuthorityEntity not initialized properly");
+                Debug.LogError("Auth Manager is null");
                 return;
             }
             

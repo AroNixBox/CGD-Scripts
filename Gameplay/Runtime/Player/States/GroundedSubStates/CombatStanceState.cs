@@ -27,8 +27,7 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
 
         public void OnEnter() {
             _inputReader.Fire += Attack;
-            _inputReader.NextGun += _weaponStash.SelectNextWeapon;
-            _inputReader.PreviousGun += _weaponStash.SelectPreviousWeapon;
+            _inputReader.Move += _weaponStash.SelectWeapon;
             
             _cameraControls.SwitchToControllableCameraMode(PlayerCameraControls.ECameraMode.FirstPerson).ContinueWith(
                     () => _controller.VisualModel.gameObject.SetActive(false)
@@ -97,8 +96,7 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         }
 
         public void OnExit() {
-            _inputReader.NextGun -= _weaponStash.SelectNextWeapon;
-            _inputReader.PreviousGun -= _weaponStash.SelectPreviousWeapon;
+            _inputReader.Move -= _weaponStash.SelectWeapon;
             _inputReader.Fire -= Attack;
             _cameraControls.ResetControllableCameras();
             _weaponStash.DespawnSelectedWeapon();

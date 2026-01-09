@@ -13,6 +13,9 @@ namespace Gameplay.Runtime.Player.Combat {
         [Header("Physical Impact")]
         [SerializeField] float maximumExplosionForce;
         [SerializeField] float maximumExplosionUpwardModifier;
+
+        public float MaximumDamage => maximumDamage;
+        public float MaximumExplosionForce => maximumExplosionForce;
         
         // TODO: Implement
         // [field: SerializeField] public float DropoffBeginDistance { get; private set; }
