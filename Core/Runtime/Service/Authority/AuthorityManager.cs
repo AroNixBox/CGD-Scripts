@@ -18,8 +18,19 @@ namespace Core.Runtime.Authority {
         [SerializeField, Tooltip("Delay in seconds between each entity spawn")]
         float spawnInterval = 1.5f;
         [SerializeField] int startIndex;
+        
+        [BoxGroup("Turn Timer")]
+        [SerializeField, Tooltip("Duration of each turn in seconds")]
+        float turnDuration = 30f;
+        [BoxGroup("Turn Timer")]
+        [SerializeField, Tooltip("If true, the turn will automatically end when the timer runs out")]
+        bool autoEndTurnOnTimeout = true;
+        
         readonly List<AuthorityEntity> _authorityEntities = new();
         readonly List<Transform> _availableSpawnPoints = new();
+        
+        float _currentTurnTime;
+        bool _isTimerRunning;
 
         #region Events
 
@@ -28,6 +39,15 @@ namespace Core.Runtime.Authority {
         public event Action<AuthorityEntity> OnEntityAuthorityRevoked = delegate { }; // End Turn
         public static event Action<AuthorityEntity> OnEntityDied = delegate { };
         public event Action<AuthorityEntity> OnLastEntityRemaining = delegate { }; // 
+        
+        /// <summary>
+        /// Fired every frame when the timer is running. Parameter is the remaining time in seconds.
+        /// </summary>
+        public event Action<float> OnTurnTimerUpdated = delegate { };
+        /// <summary>
+        /// Fired when the turn timer expires.
+        /// </summary>
+        public event Action OnTurnTimerExpired = delegate { };
 
         #endregion
         
@@ -104,6 +124,55 @@ namespace Core.Runtime.Authority {
             GiveNextEntityAuthority();
         }
         
+        void Update() {
+            UpdateTimer();
+        }
+        
+        void UpdateTimer() {
+            if (!_isTimerRunning) return;
+            
+            _currentTurnTime -= Time.deltaTime;
+            OnTurnTimerUpdated.Invoke(_currentTurnTime);
+            
+            if (_currentTurnTime <= 0f) {
+                _currentTurnTime = 0f;
+                _isTimerRunning = false;
+                OnTurnTimerExpired.Invoke();
+                
+                if (autoEndTurnOnTimeout && _currentAuthority != null) {
+                    GiveNextEntityAuthority();
+                }
+            }
+        }
+        
+        void StartTimer() {
+            _currentTurnTime = turnDuration;
+            _isTimerRunning = true;
+            OnTurnTimerUpdated.Invoke(_currentTurnTime);
+        }
+        
+        /// <summary>
+        /// Stops the turn timer without ending the turn.
+        /// </summary>
+        public void StopTimer() {
+            _isTimerRunning = false;
+        }
+        
+        /// <summary>
+        /// Gets the configured turn duration in seconds.
+        /// </summary>
+        public float TurnDuration => turnDuration;
+        
+        /// <summary>
+        /// Gets the current remaining time in seconds.
+        /// </summary>
+        public float CurrentTurnTime => _currentTurnTime;
+        
+        /// <summary>
+        /// Returns true if the turn timer is currently running.
+        /// </summary>
+        public bool IsTimerRunning => _isTimerRunning;
+        
         void OnDestroy() => ServiceLocator.Unregister<AuthorityManager>();
 
         
@@ -139,6 +208,7 @@ namespace Core.Runtime.Authority {
                     OnEntityAuthorityRevoked.Invoke(_currentAuthority);
                 _currentAuthority = newAuthorityEntity;
                 OnEntityAuthorityGained.Invoke(newAuthorityEntity);
+                StartTimer();
             }
         }
 
@@ -152,6 +222,9 @@ namespace Core.Runtime.Authority {
                 Debug.LogError("AuthorityEntity is null.");
                 return;
             }
+            
+            StopTimer();
+            
             if (_currentAuthority != null)
                 OnEntityAuthorityRevoked.Invoke(_currentAuthority);
             
