@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using Gameplay.Runtime.Interfaces;
 using UnityEngine;
 
@@ -18,7 +18,8 @@ namespace Gameplay.Runtime.Player.Combat {
         // [field: SerializeField] public float DropoffBeginDistance { get; private set; }
         // [field: SerializeField] public float DropoffEndDistance { get; private set; }
         // [field: SerializeField] public float DistanceMultiplierValue { get; private set; }
-        public void OnImpact(Vector3 impactPosition) {
+        public ImpactResult OnImpact(Vector3 impactPosition) {
+            var result = new ImpactResult();
             var overlappedObjects = Physics.OverlapSphere(impactPosition, aoeRadius);
                 
             foreach (var overlappedObject in overlappedObjects) {
@@ -32,38 +33,46 @@ namespace Gameplay.Runtime.Player.Combat {
                 var distanceScore = Mathf.Clamp(distanceObjectFromCenter / aoeRadius, 0, 1); 
                 var intensity = damageDropoffCurve.Evaluate(distanceScore); 
                 
-                ApplyDamage(damageable, intensity);
-                ApplyPhysics(damageable, intensity, impactPosition);
+                result.TotalDamageDealt += ApplyDamage(damageable, intensity);
+                result.TotalKnockbackApplied += ApplyPhysics(damageable, intensity, impactPosition);
+                result.TargetsHit++;
             }
+
+            return result;
         }
 
-        void ApplyDamage(IDamageable target, float intensity) {
-            if(target == null) return; // Safety
+        float ApplyDamage(IDamageable target, float intensity) {
+            if(target == null) return 0f;
             
             var damage = maximumDamage * intensity;
             target.TakeDamage(damage);
+            return damage;
         }
         
-        void ApplyPhysics(IDamageable target, float intensity, Vector3 projectileImpactPosition) {
-            if(target is not MonoBehaviour targetMonoBehaviour) return;
+        float ApplyPhysics(IDamageable target, float intensity, Vector3 projectileImpactPosition) {
+            if(target is not MonoBehaviour targetMonoBehaviour) return 0f;
     
             // CalculateForce
             var explosionForce = maximumExplosionForce * intensity;
             var explosionUpwardsModifier = maximumExplosionUpwardModifier * intensity;
             var impactDirection = (targetMonoBehaviour.transform.position - projectileImpactPosition).normalized;
             var totalForce = impactDirection * explosionForce + Vector3.up * explosionUpwardsModifier;
+            var totalForceMagnitude = totalForce.magnitude;
     
             // Player Controller uses own Physics System
             if (targetMonoBehaviour.TryGetComponent(out PlayerController playerController)) {
                 playerController.ApplyExternalForce(totalForce);
-                return;
+                return totalForceMagnitude;
             }
     
             // Normal Rigidbodies
             if (targetMonoBehaviour.TryGetComponent(out Rigidbody targetRigidbody)) {
                 targetRigidbody.AddForce(impactDirection * explosionForce, ForceMode.Impulse);
                 targetRigidbody.AddForce(Vector3.up * explosionUpwardsModifier, ForceMode.Impulse);
+                return totalForceMagnitude;
             }
+
+            return 0f;
         }
     }
 }

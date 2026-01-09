@@ -3,15 +3,35 @@ using System.Collections.Generic;
 using System.IO;
 using Core.Runtime.Authority;
 using Core.Runtime.Service;
+using Gameplay.Runtime.Player;
 using Gameplay.Runtime.Player.Combat;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace DataCollection.Runtime {
     /// <summary>
-    /// Collects and stores game data during runtime, then saves it to a JSON file.
+    ///     Collects and stores game data during runtime, then saves it to a JSON file.
     /// </summary>
     public class CollectData : MonoBehaviour {
+
+        [SerializeField] private string saveFileName = "GameData";
+        [SerializeField] private bool appendTimestamp = true;
+        private readonly Dictionary<AuthorityEntity, string> _entityToUniqueId = new();
+        private readonly Dictionary<string, UserData> _userDatas = new();
+        private readonly Dictionary<string, WeaponData> _weaponDatas = new();
+        private PlayerWeaponStash _activePlayerWeaponStash;
+
+        private AuthorityManager _authorityManager;
+        private AuthorityEntity _currentAuthorityEntity;
+        private PlayerController _currentPlayerController;
+
+        private bool _initialized;
+
+        private MatchData _matchData;
+        private bool _matchStarted;
+        private DateTime _matchStartTime;
+
+        private DateTime _turnStartTime;
+        public static CollectData Instance { get; private set; }
         [Serializable]
         private struct MatchData {
             public string matchDuration; //done
@@ -21,9 +41,10 @@ namespace DataCollection.Runtime {
 
         [Serializable]
         private struct UserData {
+            public string uniqueId; // unique identifier for the user (e.g., "Player1_12345")
             public string userName; // done
             public List<Vector3> positions; // done
-            public List<double> damagePerTurn; 
+            public List<double> damagePerTurn;
             public List<string> usedWeaponPerTurn; // done
             public List<double> movementPercentagePerTurn; // noch nicht eingebaut
             public List<string> turnDurations; // done
@@ -39,6 +60,7 @@ namespace DataCollection.Runtime {
             public int usageCount; // done
             public int hitCount;
             public List<double> damagePerUsage;
+            public List<double> knockbackPerUsage;
             public List<double> distanceToTargetPerUsage;
         }
 
@@ -49,53 +71,36 @@ namespace DataCollection.Runtime {
             public List<WeaponData> weaponDatas;
         }
 
-        private MatchData _matchData;
-        private readonly Dictionary<string, UserData> _userDatas = new();
-        private readonly Dictionary<string, WeaponData> _weaponDatas = new();
-        private DateTime _matchStartTime;
-        public static CollectData Instance { get; private set; }
-
-        [SerializeField] private string saveFileName = "GameData";
-        [SerializeField] private bool appendTimestamp = true;
-
-        private AuthorityManager _authorityManager;
-
-        private bool _initialized = false;
-        
-        private DateTime _turnStartTime;
-        private PlayerWeaponStash _activePlayerWeaponStash;
-        private AuthorityEntity _currentAuthorityEntity;
-
         #region Match Data Collection
 
         /// <summary>
-        /// Initializes match data collection. Call this at the start of a match.
+        ///     Initializes match data collection. Call this at the start of a match.
         /// </summary>
         public void StartMatchDataCollection() {
             _matchStartTime = DateTime.Now;
             _matchData = new MatchData
             {
                 totalTurns = 0,
-                winner = "",
+                winner = ""
             };
         }
 
         /// <summary>
-        /// Increments the turn counter.
+        ///     Increments the turn counter.
         /// </summary>
         public void IncrementTurn() {
             _matchData.totalTurns++;
         }
 
         /// <summary>
-        /// Sets the winner information.
+        ///     Sets the winner information.
         /// </summary>
         public void SetWinner(string winnerName) {
             _matchData.winner = winnerName;
         }
 
         /// <summary>
-        /// Finalizes match data. Call this when the match ends.
+        ///     Finalizes match data. Call this when the match ends.
         /// </summary>
         public void EndMatchDataCollection() {
             TimeSpan duration = DateTime.Now - _matchStartTime;
@@ -107,13 +112,31 @@ namespace DataCollection.Runtime {
         #region User Data Collection
 
         /// <summary>
-        /// Initializes a user for data collection.
+        ///     Generates a unique identifier for a user based on their username and entity instance ID.
         /// </summary>
-        public void InitializeUser(string userName) {
-            if (!_userDatas.ContainsKey(userName)) {
-                _userDatas[userName] = new UserData
+        private string GenerateUniqueId(AuthorityEntity entity) {
+            return $"{entity.UserData.Username}_{entity.GetInstanceID()}";
+        }
+
+        /// <summary>
+        ///     Gets the unique ID for an entity, or returns null if not found.
+        /// </summary>
+        private string GetUniqueId(AuthorityEntity entity) {
+            return _entityToUniqueId.TryGetValue(entity, out var uniqueId) ? uniqueId : null;
+        }
+
+        /// <summary>
+        ///     Initializes a user for data collection.
+        /// </summary>
+        public void InitializeUser(AuthorityEntity entity) {
+            var uniqueId = GenerateUniqueId(entity);
+            _entityToUniqueId[entity] = uniqueId;
+
+            if (!_userDatas.ContainsKey(uniqueId)) {
+                _userDatas[uniqueId] = new UserData
                 {
-                    userName = userName,
+                    uniqueId = uniqueId,
+                    userName = entity.UserData.Username,
                     positions = new List<Vector3>(),
                     damagePerTurn = new List<double>(),
                     usedWeaponPerTurn = new List<string>(),
@@ -128,76 +151,76 @@ namespace DataCollection.Runtime {
         }
 
         /// <summary>
-        /// Records user position.
+        ///     Records user position.
         /// </summary>
-        public void RecordUserPosition(string userName, Vector3 position) {
-            if (!_userDatas.TryGetValue(userName, out UserData data)) return;
+        public void RecordUserPosition(string uniqueId, Vector3 position) {
+            if (!_userDatas.TryGetValue(uniqueId, out UserData data)) return;
             data.positions.Add(position);
-            _userDatas[userName] = data;
+            _userDatas[uniqueId] = data;
         }
 
         /// <summary>
-        /// Records damage dealt in a turn.
+        ///     Records damage dealt in a turn.
         /// </summary>
-        public void RecordDamage(string userName, double damage) {
-            if (!_userDatas.TryGetValue(userName, out UserData data)) return;
+        public void RecordDamage(string uniqueId, double damage) {
+            if (!_userDatas.TryGetValue(uniqueId, out UserData data)) return;
             data.damagePerTurn.Add(damage);
-            _userDatas[userName] = data;
+            _userDatas[uniqueId] = data;
         }
 
         /// <summary>
-        /// Records weapon used in a turn.
+        ///     Records weapon used in a turn.
         /// </summary>
-        public void RecordWeaponUsed(string userName, string weaponName) {
-            if (!_userDatas.TryGetValue(userName, out UserData data)) return;
+        public void RecordWeaponUsed(string uniqueId, string weaponName) {
+            if (!_userDatas.TryGetValue(uniqueId, out UserData data)) return;
             data.usedWeaponPerTurn.Add(weaponName);
-            _userDatas[userName] = data;
+            _userDatas[uniqueId] = data;
         }
 
         /// <summary>
-        /// Records movement percentage in a turn.
+        ///     Records movement percentage in a turn.
         /// </summary>
-        public void RecordMovementPercentage(string userName, double percentage) {
-            if (!_userDatas.TryGetValue(userName, out UserData data)) return;
+        public void RecordMovementPercentage(string uniqueId, double percentage) {
+            if (!_userDatas.TryGetValue(uniqueId, out UserData data)) return;
             data.movementPercentagePerTurn.Add(percentage);
-            _userDatas[userName] = data;
+            _userDatas[uniqueId] = data;
         }
 
         /// <summary>
-        /// Records turn duration.
+        ///     Records turn duration.
         /// </summary>
-        public void RecordTurnDuration(string userName, TimeSpan duration) {
-            if (!_userDatas.TryGetValue(userName, out UserData data)) return;
+        public void RecordTurnDuration(string uniqueId, TimeSpan duration) {
+            if (!_userDatas.TryGetValue(uniqueId, out UserData data)) return;
             data.turnDurations.Add(duration.ToString(@"mm\:ss"));
-            _userDatas[userName] = data;
+            _userDatas[uniqueId] = data;
         }
 
         /// <summary>
-        /// Increments kill count for a user.
+        ///     Increments kill count for a user.
         /// </summary>
-        public void RecordKill(string userName) {
-            if (!_userDatas.TryGetValue(userName, out UserData data)) return;
+        public void RecordKill(string uniqueId) {
+            if (!_userDatas.TryGetValue(uniqueId, out UserData data)) return;
             data.totalKills++;
-            _userDatas[userName] = data;
+            _userDatas[uniqueId] = data;
         }
 
         /// <summary>
-        /// Records user death information.
+        ///     Records user death information.
         /// </summary>
-        public void RecordDeath(string userName, Vector3 killerPosition) {
-            if (!_userDatas.TryGetValue(userName, out UserData data)) return;
+        public void RecordDeath(string uniqueId, Vector3 killerPosition) {
+            if (!_userDatas.TryGetValue(uniqueId, out UserData data)) return;
             data.died = true;
             data.killerPositionOnDeath = killerPosition;
-            _userDatas[userName] = data;
+            _userDatas[uniqueId] = data;
         }
 
         /// <summary>
-        /// Records user's fairness rating.
+        ///     Records user's fairness rating.
         /// </summary>
-        public void RecordFairnessRating(string userName, bool isFair) {
-            if (!_userDatas.TryGetValue(userName, out UserData data)) return;
+        public void RecordFairnessRating(string uniqueId, bool isFair) {
+            if (!_userDatas.TryGetValue(uniqueId, out UserData data)) return;
             data.userRatedMatchAsFair = isFair;
-            _userDatas[userName] = data;
+            _userDatas[uniqueId] = data;
         }
 
         #endregion
@@ -205,7 +228,7 @@ namespace DataCollection.Runtime {
         #region Weapon Data Collection
 
         /// <summary>
-        /// Initializes a weapon for data collection.
+        ///     Initializes a weapon for data collection.
         /// </summary>
         public void InitializeWeapon(string weaponName) {
             if (!_weaponDatas.ContainsKey(weaponName)) {
@@ -215,15 +238,16 @@ namespace DataCollection.Runtime {
                     usageCount = 0,
                     hitCount = 0,
                     damagePerUsage = new List<double>(),
+                    knockbackPerUsage = new List<double>(),
                     distanceToTargetPerUsage = new List<double>()
                 };
             }
         }
 
         /// <summary>
-        /// Records weapon usage.
+        ///     Records weapon usage.
         /// </summary>
-        public void RecordWeaponUsage(string weaponName, double damage, double distanceToTarget, bool hit) {
+        public void RecordWeaponUsage(string weaponName, double damage, double knockback, double distanceToTarget, bool hit) {
             if (!_weaponDatas.ContainsKey(weaponName)) InitializeWeapon(weaponName);
 
             WeaponData data = _weaponDatas[weaponName];
@@ -232,6 +256,7 @@ namespace DataCollection.Runtime {
                 data.hitCount++;
             }
             data.damagePerUsage.Add(damage);
+            data.knockbackPerUsage.Add(knockback);
             data.distanceToTargetPerUsage.Add(distanceToTarget);
             _weaponDatas[weaponName] = data;
         }
@@ -241,7 +266,7 @@ namespace DataCollection.Runtime {
         #region Save Data
 
         /// <summary>
-        /// Saves all collected data to a JSON file.
+        ///     Saves all collected data to a JSON file.
         /// </summary>
         public void SaveDataToJson() {
             var gameData = new GameData
@@ -251,15 +276,15 @@ namespace DataCollection.Runtime {
                 weaponDatas = new List<WeaponData>(_weaponDatas.Values)
             };
 
-            string json = JsonUtility.ToJson(gameData, true);
-            string fileName = saveFileName;
+            var json = JsonUtility.ToJson(gameData, true);
+            var fileName = saveFileName;
 
             if (appendTimestamp) {
-                string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+                var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
                 fileName = $"{saveFileName}_{timestamp}";
             }
 
-            string filePath = Path.Combine(Application.persistentDataPath, $"{fileName}.json");
+            var filePath = Path.Combine(Application.persistentDataPath, $"{fileName}.json");
 
             try {
                 File.WriteAllText(filePath, json);
@@ -271,12 +296,14 @@ namespace DataCollection.Runtime {
         }
 
         /// <summary>
-        /// Clears all collected data.
+        ///     Clears all collected data.
         /// </summary>
         public void ClearData() {
             _matchData = new MatchData();
             _userDatas.Clear();
             _weaponDatas.Clear();
+            _entityToUniqueId.Clear();
+            _matchStarted = false;
         }
 
         #endregion
@@ -319,52 +346,112 @@ namespace DataCollection.Runtime {
             AuthorityManager.OnEntityDied -= HandlePlayerDied;
             _authorityManager.OnLastEntityRemaining -= HandleGameOver;
         }
-        
+
         #endregion
 
         #region Event Handlers
 
         private void HandlePlayerSpawned(AuthorityEntity entity) {
-            InitializeUser(entity.UserData.Username);
+            InitializeUser(entity);
         }
 
         private void HandleTurnStart(AuthorityEntity entity) {
+            // Start match data collection on first turn
+            if (!_matchStarted) {
+                StartMatchDataCollection();
+                _matchStarted = true;
+            }
+
             IncrementTurn();
             _turnStartTime = DateTime.Now;
             _currentAuthorityEntity = entity;
+
+            // Get the PlayerController to access MovementBudget
+            entity.gameObject.TryGetComponent(out _currentPlayerController);
+
             if (!entity.gameObject.TryGetComponent(out _activePlayerWeaponStash)) return;
             _activePlayerWeaponStash.OnSuccessfulShot += HandleOnActivePlayerFired;
-            
+
         }
 
         private void HandleTurnEnd(AuthorityEntity entity) {
+            var uniqueId = GetUniqueId(entity);
+            if (uniqueId == null) return;
+
             TimeSpan turnDuration = DateTime.Now - _turnStartTime;
-            RecordTurnDuration(entity.UserData.Username, turnDuration);
-            RecordUserPosition(entity.UserData.Username, entity.transform.position);
+            RecordTurnDuration(uniqueId, turnDuration);
+            RecordUserPosition(uniqueId, entity.transform.position);
+
+            // Calculate and record movement usage percentage
+            if (_currentPlayerController != null && _currentPlayerController.MovementBudget != null) {
+                // GetRemainingPercentage returns 1.0 for full, 0.0 for empty
+                // So used percentage is (1 - remaining) * 100
+                var usedMovementPercentage = (1.0 - _currentPlayerController.MovementBudget.GetRemainingPercentage()) * 100.0;
+                RecordMovementPercentage(uniqueId, usedMovementPercentage);
+            }
+
             if (_activePlayerWeaponStash != null)
                 _activePlayerWeaponStash.OnSuccessfulShot -= HandleOnActivePlayerFired;
+
+            _currentPlayerController = null;
         }
 
         private void HandlePlayerDied(AuthorityEntity entity) {
-            // get killer
-            RecordDeath(entity.UserData.Username, Vector3.zero);
+            var victimUniqueId = GetUniqueId(entity);
+            if (victimUniqueId == null) return;
+
+            // In a turn-based game, the player with authority is the killer
+            // (they are the one who fired the shot that killed the victim)
+            Vector3 killerPosition = Vector3.zero;
+
+            if (_currentAuthorityEntity != null && _currentAuthorityEntity != entity) {
+                // Record the killer's position at the time of the kill
+                killerPosition = _currentAuthorityEntity.transform.position;
+
+                // Increment the killer's kill count
+                var killerUniqueId = GetUniqueId(_currentAuthorityEntity);
+                if (killerUniqueId != null) {
+                    RecordKill(killerUniqueId);
+                }
+            }
+
+            // Record the victim's death with the killer's position
+            RecordDeath(victimUniqueId, killerPosition);
         }
 
         private void HandleGameOver(AuthorityEntity winnerEntity) {
-            SetWinner(winnerEntity.UserData.Username);
+            SetWinner(GetUniqueId(winnerEntity));
             EndMatchDataCollection();
             SaveDataToJson();
             ClearData();
         }
 
         private void HandleOnActivePlayerFired(Projectile projectile) {
-            string weaponName = projectile.name;
-            double damage = 0; // Placeholder, replace with actual damage calculation
-            double distanceToTarget = Vector3.Distance(projectile.transform.position, Vector3.zero); // Placeholder, replace with actual target position
-            bool hit = true; // Placeholder, replace with actual hit detection
+            var weaponName = projectile.name.Replace("(Clone)", "").Trim();
+            var uniqueId = GetUniqueId(_currentAuthorityEntity);
+            if (uniqueId == null) return;
 
-            RecordWeaponUsage(weaponName, damage, distanceToTarget, hit);
-            RecordWeaponUsed(_currentAuthorityEntity.UserData.Username, weaponName);
+            Vector3 startPosition = projectile.transform.position;
+
+            // Subscribe to the projectile's impact event to wait until the shot actually lands
+            projectile.OnImpact += OnProjectileImpact;
+
+            void OnProjectileImpact(Vector3 impactPosition, bool wasActiveImpact, ImpactResult impactResult) {
+                projectile.OnImpact -= OnProjectileImpact;
+
+                double distanceToTarget = Vector3.Distance(startPosition, impactPosition);
+                // wasActiveImpact indicates if the projectile hit something (true) or expired via lifetime (false)
+                var hit = wasActiveImpact && impactResult.TargetsHit > 0;
+                double damage = impactResult.TotalDamageDealt;
+                double knockback = impactResult.TotalKnockbackApplied;
+
+                // Record weapon statistics (global weapon data)
+                RecordWeaponUsage(weaponName, damage, knockback, distanceToTarget, hit);
+
+                // Record per-user data: weapon used and damage dealt this turn
+                RecordWeaponUsed(uniqueId, weaponName);
+                RecordDamage(uniqueId, damage);
+            }
         }
 
         #endregion

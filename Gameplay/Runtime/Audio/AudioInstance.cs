@@ -6,7 +6,6 @@ namespace Gameplay.Runtime._Scripts.Gameplay.Runtime.Audio {
     public class AudioInstance : MonoBehaviour {
         AudioManager _manager;
         void Start() {
-            Debug.Log(ServiceLocator.TryGet(out AudioManager manager));
             if (!ServiceLocator.TryGet(out _manager)) {
                 Debug.LogError("No Audio Manager in Scene, wont work Properly");
                 return;

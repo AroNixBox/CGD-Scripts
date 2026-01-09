@@ -16,6 +16,11 @@ namespace Gameplay.Runtime.Player.Combat {
         Action<bool> _onProjectileExpired; // bool = was the impact fallbackLifeTime = false or active through instant col/set countdown
 
         ProjectileImpactData _impactData;
+        
+        /// <summary>
+        /// Event fired when the projectile impacts. Parameters: impactPosition, wasActiveImpact (true if not fallback lifetime), impactResult
+        /// </summary>
+        public event Action<Vector3, bool, ImpactResult> OnImpact;
         CountdownTimer _projectileActionTimer;
 
         void Awake() {
@@ -76,9 +81,12 @@ namespace Gameplay.Runtime.Player.Combat {
         void CompleteImpact(bool wasActiveImpact) {
             // Impact Strategy
             var impactStrategy = _impactData.GetImpactStrategy();
-            impactStrategy.OnImpact(transform.position);
+            var impactResult = impactStrategy.OnImpact(transform.position);
             
             ApplyEffects();
+            
+            // Fire impact event before cleanup
+            OnImpact?.Invoke(transform.position, wasActiveImpact, impactResult);
             
             if (_lifetimeTimer != null) {
                 _lifetimeTimer.OnTimerStop -= OnFallbackExpired;
