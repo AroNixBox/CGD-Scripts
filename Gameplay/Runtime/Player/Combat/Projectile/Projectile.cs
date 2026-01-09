@@ -57,11 +57,14 @@ namespace Gameplay.Runtime.Player.Combat {
             _rb.AddForce(force * direction, ForceMode.Impulse);
         }
 
-        void OnCollisionEnter(Collision _) {
+        Collision _lastCollision;
+        
+        void OnCollisionEnter(Collision collision) {
             // Currently only supports single Collision
             if (!IsSingleCollision()) return;
             if(_hasImpacted) return;
             _hasImpacted = true;
+            _lastCollision = collision;
             
             CompleteImpact(wasActiveImpact: true);
         }
@@ -81,7 +84,14 @@ namespace Gameplay.Runtime.Player.Combat {
         void CompleteImpact(bool wasActiveImpact) {
             // Impact Strategy
             var impactStrategy = _impactData.GetImpactStrategy();
-            var impactResult = impactStrategy.OnImpact(transform.position);
+            
+            // Use collision data if available, otherwise fallback to transform position
+            var impactData = _lastCollision != null && _lastCollision.contactCount > 0
+                ? ImpactData.FromCollision(_lastCollision)
+                : ImpactData.FromPosition(transform.position);
+            
+            var impactResult = impactStrategy.OnImpact(impactData);
+            _lastCollision = null;
             
             ApplyEffects();
             

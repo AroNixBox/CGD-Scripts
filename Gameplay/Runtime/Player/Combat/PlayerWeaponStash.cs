@@ -67,6 +67,7 @@ namespace Gameplay.Runtime.Player.Combat {
             _currentWeaponIndex = index;
             OnWeaponDataSelected.Invoke(GetCurrentWeaponData());
             SpawnSelectedWeapon();
+            print(GetCurrentWeaponData().name);
         }
         
         void SpawnSelectedWeapon() {
