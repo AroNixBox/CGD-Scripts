@@ -29,11 +29,28 @@ namespace Gameplay.Runtime.Player.Combat {
             foreach (var entry in loadout.WeaponLoadoutEntries) {
                 if (entry.WeaponData == null) continue;
 
-                // TODO: Also differentiate in Damage! Or Get it via Dropdown!
                 // 1. Get the category via impact strategy
                 var strategy = entry.WeaponData.ProjectileData.impactData.GetImpactStrategy();
-                // Fallback, null strategory, map under uncategorized
-                string typeKey = strategy != null ? strategy.GetType().ToString() : "Uncategorized";
+                
+                string typeKey;
+
+                // if impact strategy is aoe differentiate between damage and yeet
+                // Yeet = >5dmg and some knockback
+                // Else Damage
+                if (strategy is AOEDamageStrategy aoeStrategy) {
+                    if (aoeStrategy.MaximumDamage > 5 && aoeStrategy.MaximumExplosionForce > 0) {
+                        typeKey = "Yeet";
+                    }
+                    else {
+                        typeKey = "Damage";
+                    }
+                }
+                else {
+                    // Fallback, null strategory, map under uncategorized
+                    typeKey = strategy != null 
+                        ? strategy.GetType().ToString() 
+                        : "Uncategorized";
+                }
 
                 // 2. Add List in Dict if no entry yet for that category
                 if (!_weaponCategoryDatasMapping.ContainsKey(typeKey)) {
