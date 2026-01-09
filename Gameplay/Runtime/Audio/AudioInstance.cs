@@ -14,7 +14,8 @@ namespace Gameplay.Runtime._Scripts.Gameplay.Runtime.Audio {
         
         public void PlayClipAtPosition(AudioClip clip) {
             if (clip == null || _manager == null) return;
-            _manager.PlayClipAtPosition(clip);
+            const float volume = 1f;
+            _manager.PlayClipAtPosition(clip, transform.position, volume);
         }
 
         public void PlayClipAtPosition(AudioClip clip, Vector3 position, float volume = 1f) {

@@ -23,11 +23,6 @@ namespace Gameplay.Core.Service {
             }        
         }
 
-        public void PlayClipAtPosition(AudioClip clip) {
-            if (clip == null) return;
-            AudioSource.PlayClipAtPoint(clip, transform.position);
-        }
-
         public void PlayClipAtPosition(AudioClip clip, Vector3 position, float volume = 1f) {
             if (clip == null) return;
             AudioSource.PlayClipAtPoint(clip, position, volume);
