@@ -138,7 +138,7 @@ namespace Gameplay.Runtime.Player.Combat {
                 var group = groups[currentGroupIdx];
                 if (group.Count > 1) {
                     // Up (>0): Prev, Down (<0): Next Gun
-                    var nextWeaponIdx = input.y > 0
+                    var nextWeaponIdx = input.y < 0
                         ? (currentWeaponIdx - 1 + group.Count) % group.Count
                         : (currentWeaponIdx + 1) % group.Count;
                     nextSelection = group[nextWeaponIdx].weaponData;
