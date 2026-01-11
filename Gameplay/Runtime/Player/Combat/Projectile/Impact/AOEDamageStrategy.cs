@@ -12,7 +12,9 @@ namespace Gameplay.Runtime.Player.Combat {
         
         // TODO:
         [Header("Physical Impact")]
+        [Tooltip("Maximum explosion force that will push (>0) or pull (<0) the player in direction of the impact.")]
         [SerializeField] float maximumExplosionForce;
+        [Tooltip("Explosion strength in vertical direction. On top of normal force and also invertable for downward force.")]
         [SerializeField] float maximumExplosionUpwardModifier;
 
         public float MaximumDamage => maximumDamage;
@@ -61,9 +63,9 @@ namespace Gameplay.Runtime.Player.Combat {
             if(target is not MonoBehaviour targetMonoBehaviour) return 0f;
     
             // CalculateForce
-            var explosionForce = maximumExplosionForce * intensity;
-            var explosionUpwardsModifier = maximumExplosionUpwardModifier * intensity;
-            var impactDirection = (targetMonoBehaviour.transform.position - projectileImpactPosition).normalized;
+            var explosionForce = Mathf.Abs(maximumExplosionForce * intensity);
+            var explosionUpwardsModifier = Mathf.Abs(maximumExplosionUpwardModifier * intensity);
+            var impactDirection = (targetMonoBehaviour.transform.position - projectileImpactPosition).normalized * (maximumExplosionForce > 0 ? 1 : -1);
             var totalForce = impactDirection * explosionForce + Vector3.up * explosionUpwardsModifier;
             var totalForceMagnitude = totalForce.magnitude;
             
@@ -73,9 +75,9 @@ namespace Gameplay.Runtime.Player.Combat {
             } // Normal Rigidbodies
             else if (targetMonoBehaviour.TryGetComponent(out Rigidbody targetRigidbody)) {
                 targetRigidbody.AddForce(impactDirection * explosionForce, ForceMode.Impulse);
-                targetRigidbody.AddForce(Vector3.up * explosionUpwardsModifier, ForceMode.Impulse);
+                targetRigidbody.AddForce((maximumExplosionUpwardModifier > 0 ? Vector3.up : Vector3.down) * explosionUpwardsModifier, ForceMode.Impulse);
             }
-            
+
             return totalForceMagnitude;
         }
     }
