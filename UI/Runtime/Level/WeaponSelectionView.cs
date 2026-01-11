@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Gameplay.Runtime.Player.Combat;
 using Sirenix.OdinInspector;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,6 +14,8 @@ namespace UI.Runtime.Level {
         
         [SerializeField, Required] WeaponSelectionCategory weaponCategoryPrefab;
         [SerializeField, Required] WeaponSelectionEntry weaponEntryPrefab;
+        [SerializeField, Required] TMP_Text currentWeaponNameText;
+        [SerializeField, Required] TMP_Text shootingPowerText;
 
         readonly Dictionary<string, WeaponSelectionCategory> _categories = new();
 
@@ -36,6 +39,9 @@ namespace UI.Runtime.Level {
         
         public void SelectWeapon(string categoryName, WeaponData data) {
             if (!_categories.TryGetValue(categoryName, out var category)) return;
+            
+            // Update current weapon name display
+            currentWeaponNameText.text = data.name;
             
             // Deselect all
             foreach (var cat in _categories.Values) {
@@ -92,5 +98,9 @@ namespace UI.Runtime.Level {
 
         public void HideUI() => weaponSelectionMenu.gameObject.SetActive(false);
         public void ShowUI() => weaponSelectionMenu.gameObject.SetActive(true);
+
+        public void UpdateShootingPower(float percent) {
+            shootingPowerText.text = $"{percent:F0}%";
+        }
     }
 }

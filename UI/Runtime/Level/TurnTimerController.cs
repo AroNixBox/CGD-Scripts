@@ -66,10 +66,8 @@ namespace UI.Runtime.Level {
         }
 
         private void HandleAuthorityGained(AuthorityEntity entity) {
-            print("HandleAuthorityGained called");
             // Only show timer if this is our entity
             if (entity != _authorityEntity) return;
-            print("Authority gained, showing turn timer");
             view.Initialize(_authorityManager.TurnDuration);
             view.SetVisible(true);
         }

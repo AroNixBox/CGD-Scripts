@@ -24,6 +24,7 @@ namespace Gameplay.Runtime.Player.Combat {
         public event Action<string, WeaponData> OnWeaponDataSelected = delegate { };
         public event Action<string, WeaponData, int> OnAmmoChanged = delegate { };
         public event Action<Projectile> OnSuccessfulShot = delegate { };
+        public event Action<float> OnProjectileForceChanged = delegate { };
 
         void Start() {
             if (loadout == null) throw new NullReferenceException("Weapon Loadout needs to be referenced");
@@ -199,6 +200,14 @@ namespace Gameplay.Runtime.Player.Combat {
             var currentWeaponPrefab = _currentWeaponData.Weapon;
             _spawnedWeapon = Instantiate(currentWeaponPrefab, weaponSocket);
             _spawnedWeapon.Init(_currentWeaponData);
+            _spawnedWeapon.OnProjectileForceChanged += HandleProjectileForceChanged;
+            
+            // Notify initial value
+            OnProjectileForceChanged.Invoke(_spawnedWeapon.ProjectileForcePercent);
+        }
+        
+        void HandleProjectileForceChanged(float percent) {
+            OnProjectileForceChanged.Invoke(percent);
         }
 
         public WeaponData GetCurrentWeaponData() => _currentWeaponData;
@@ -251,8 +260,10 @@ namespace Gameplay.Runtime.Player.Combat {
         public Weapon GetSpawnedWeapon() => _spawnedWeapon;
 
         public void DespawnSelectedWeapon() {
-            if(_spawnedWeapon != null)
+            if(_spawnedWeapon != null) {
+                _spawnedWeapon.OnProjectileForceChanged -= HandleProjectileForceChanged;
                 _spawnedWeapon.Dispose();
+            }
         }
     }
 }
