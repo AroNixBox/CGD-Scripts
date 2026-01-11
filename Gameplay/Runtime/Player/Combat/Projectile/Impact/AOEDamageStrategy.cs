@@ -1,5 +1,6 @@
-﻿﻿using System;
-using Gameplay.Runtime.Interfaces;
+﻿using System;
+ using System.Collections.Generic;
+ using Gameplay.Runtime.Interfaces;
 using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Combat {
@@ -22,10 +23,13 @@ namespace Gameplay.Runtime.Player.Combat {
         // [field: SerializeField] public float DropoffEndDistance { get; private set; }
         // [field: SerializeField] public float DistanceMultiplierValue { get; private set; }
         public ImpactResult OnImpact(Vector3 impactPosition) {
-            var result = new ImpactResult();
+            var result = new ImpactResult {
+                HitObjectOrigins = new List<Vector3>()
+            };
             var overlappedObjects = Physics.OverlapSphere(impactPosition, aoeRadius);
                 
             foreach (var overlappedObject in overlappedObjects) {
+                // TODO
                 if (!overlappedObject.TryGetComponent(out IDamageable damageable))
                     continue;
 
@@ -34,16 +38,17 @@ namespace Gameplay.Runtime.Player.Combat {
                 // Bring in relation 0-1 based ont he max radius
                 // Clamp is needed because objects origin can be further away than aoeRadius due to using Origin instead of collision point
                 var distanceScore = Mathf.Clamp(distanceObjectFromCenter / aoeRadius, 0, 1); 
-                var intensity = damageDropoffCurve.Evaluate(distanceScore); 
-                
-                result.TotalDamageDealt += ApplyDamage(damageable, intensity);
-                result.TotalKnockbackApplied += ApplyPhysics(damageable, intensity, impactPosition);
-                result.TargetsHit++;
+                var intensity = damageDropoffCurve.Evaluate(distanceScore);
+
+                result.HitObjectOrigins.Add(overlappedObject.transform.position);
+                result.TotalDamageDealt = ApplyDamage(damageable, intensity);
+                result.TotalKnockbackApplied = ApplyPhysics(damageable, intensity, impactPosition);
             }
 
             return result;
         }
 
+        // TODO: Damage shouldnt be applied instant but go over POI! Player should be first to apply dmg or can be instant
         float ApplyDamage(IDamageable target, float intensity) {
             if(target == null) return 0f;
             
@@ -61,21 +66,17 @@ namespace Gameplay.Runtime.Player.Combat {
             var impactDirection = (targetMonoBehaviour.transform.position - projectileImpactPosition).normalized;
             var totalForce = impactDirection * explosionForce + Vector3.up * explosionUpwardsModifier;
             var totalForceMagnitude = totalForce.magnitude;
-    
+            
             // Player Controller uses own Physics System
             if (targetMonoBehaviour.TryGetComponent(out PlayerController playerController)) {
                 playerController.ApplyExternalForce(totalForce);
-                return totalForceMagnitude;
-            }
-    
-            // Normal Rigidbodies
-            if (targetMonoBehaviour.TryGetComponent(out Rigidbody targetRigidbody)) {
+            } // Normal Rigidbodies
+            else if (targetMonoBehaviour.TryGetComponent(out Rigidbody targetRigidbody)) {
                 targetRigidbody.AddForce(impactDirection * explosionForce, ForceMode.Impulse);
                 targetRigidbody.AddForce(Vector3.up * explosionUpwardsModifier, ForceMode.Impulse);
-                return totalForceMagnitude;
             }
-
-            return 0f;
+            
+            return totalForceMagnitude;
         }
     }
 }

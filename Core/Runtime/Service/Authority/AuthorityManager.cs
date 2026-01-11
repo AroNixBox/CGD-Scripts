@@ -276,10 +276,10 @@ namespace Core.Runtime.Authority {
         }
 
         void HandleAuthorityTransfer(bool hadAuthority) {
-            if (hadAuthority) {
-                _currentAuthority = null;
-                GiveNextEntityAuthority();
-            }
+            if (!hadAuthority) return;
+            
+            _currentAuthority = null;
+            GiveNextEntityAuthority();
         }
 
         public bool HasAuthority(AuthorityEntity authorityEntity) {

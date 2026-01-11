@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Combat {
     /// <summary>
@@ -8,6 +9,7 @@ namespace Gameplay.Runtime.Player.Combat {
         public float TotalDamageDealt;
         public float TotalKnockbackApplied;
         public int TargetsHit;
+        public List<Vector3> HitObjectOrigins;
     }
 
     /// <summary>

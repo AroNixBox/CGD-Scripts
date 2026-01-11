@@ -13,14 +13,13 @@ namespace Gameplay.Runtime.Player.Combat {
         bool _hasImpacted;
         
         CountdownTimer _lifetimeTimer;
-        Action<bool> _onProjectileExpired; // bool = was the impact fallbackLifeTime = false or active through instant col/set countdown
 
         ProjectileImpactData _impactData;
         
         /// <summary>
         /// Event fired when the projectile impacts. Parameters: impactPosition, wasActiveImpact (true if not fallback lifetime), impactResult
         /// </summary>
-        public event Action<Vector3, bool, ImpactResult> OnImpact;
+        public event Action<Vector3, ImpactResult> OnImpact;
         CountdownTimer _projectileActionTimer;
 
         void Awake() {
@@ -28,24 +27,17 @@ namespace Gameplay.Runtime.Player.Combat {
         }
 
         // "Constructor"
-        public void Init(float mass, float drag, float force, Vector3 direction, Action<bool> onCompleteAction, ProjectileImpactData impactData) {
+        public void Init(float mass, float drag, float force, Vector3 direction, ProjectileImpactData impactData) {
             if(impactData == null)
                 throw new NullReferenceException("Impact Data null");
             
             _impactData = impactData;
 
-            if (IsCountdown()) {
-                // TODO: If pool reuse old Timer and reassign initialTime
+            if (_impactData.GetProjectileActionTrigger() == 
+                ProjectileImpactData.EProjectileActionTrigger.Countdown) {
                 _projectileActionTimer = new CountdownTimer(impactData.GetProjectileActionCountdown());
                 _projectileActionTimer.Start();
                 _projectileActionTimer.OnTimerStop += OnProjectileTimerActionComplete;
-            }
-            
-            if (onCompleteAction == null) {
-                Debug.LogWarning("No Projectile-Complete Action Implemented");
-            }
-            else {
-                _onProjectileExpired = onCompleteAction;
             }
             
             _lifetimeTimer ??= new CountdownTimer(fallbackLifetime);
@@ -58,7 +50,6 @@ namespace Gameplay.Runtime.Player.Combat {
         }
 
         public void InitProxyProjectile(ProjectileImpactData impactData) {
-            Debug.Log("Init of proxy projectile");
             if (impactData == null)
                 throw new NullReferenceException("Impact Data null");
 
@@ -71,22 +62,16 @@ namespace Gameplay.Runtime.Player.Combat {
             _rb.mass = 1;
             _rb.linearDamping = 0;
         }
-
-        Collision _lastCollision;
-        
         void OnCollisionEnter(Collision collision) {
-            // Currently only supports single Collision
-            if (!IsSingleCollision()) return;
-            if(_hasImpacted) return;
-            _hasImpacted = true;
-            _lastCollision = collision;
+            if (_impactData.GetProjectileActionTrigger() !=
+                ProjectileImpactData.EProjectileActionTrigger.FirstCollision) return;
             
-            CompleteImpact(wasActiveImpact: true);
+            CompleteImpact(collision);
         }
 
         // Called when Projectile-Action that is triggered by timer, timer = 0
         void OnProjectileTimerActionComplete() {
-            CompleteImpact(wasActiveImpact: true);
+            CompleteImpact(null);
         }
 
         void Update() {
@@ -94,24 +79,28 @@ namespace Gameplay.Runtime.Player.Combat {
             _projectileActionTimer?.Tick(Time.deltaTime);
         }
 
-        void OnFallbackExpired() => CompleteImpact(wasActiveImpact: false);
+        void OnFallbackExpired() {
+            CompleteImpact(null);
+        }
 
-        void CompleteImpact(bool wasActiveImpact) {
+        void CompleteImpact(Collision collision) {
+            if (_hasImpacted) return;
+            _hasImpacted = true;
+            
             // Impact Strategy
             var impactStrategy = _impactData.GetImpactStrategy();
             
             // Use collision data if available, otherwise fallback to transform position
-            var impactData = _lastCollision != null && _lastCollision.contactCount > 0
-                ? ImpactData.FromCollision(_lastCollision)
+            var impactData = collision is { contactCount: > 0 }
+                ? ImpactData.FromCollision(collision)
                 : ImpactData.FromPosition(transform.position);
             
             var impactResult = impactStrategy.OnImpact(impactData);
-            _lastCollision = null;
             
             ApplyEffects();
             
             // Fire impact event before cleanup
-            OnImpact?.Invoke(transform.position, wasActiveImpact, impactResult);
+            OnImpact?.Invoke(transform.position, impactResult);
             
             if (_lifetimeTimer != null) {
                 _lifetimeTimer.OnTimerStop -= OnFallbackExpired;
@@ -123,12 +112,11 @@ namespace Gameplay.Runtime.Player.Combat {
 
             if (_projectileActionTimer != null) {
                 _projectileActionTimer.Reset();
-            } else if (IsCountdown()) {
+            } else if (_impactData.GetProjectileActionTrigger() == 
+                       ProjectileImpactData.EProjectileActionTrigger.Countdown) {
                 Debug.LogError("Selected was Projectile-Type Countdown but Projectile Action Trigger is null, did you change the Projectile-Action-Trigger in Runtime?");
             }
 
-            _hasImpacted = false;
-            _onProjectileExpired?.Invoke(wasActiveImpact);
             Destroy(gameObject);
         }
 
@@ -159,13 +147,6 @@ namespace Gameplay.Runtime.Player.Combat {
             if (effectPrefab != null)
                 Instantiate(effectPrefab, transform.position, Quaternion.identity);
         }
-
-        // Helper
-        bool IsSingleCollision() => _impactData.GetProjectileActionTrigger() ==
-                                    ProjectileImpactData.EProjectileActionTrigger.FirstCollision;
-        
-        bool IsCountdown() => _impactData.GetProjectileActionTrigger() ==
-                                    ProjectileImpactData.EProjectileActionTrigger.Countdown;
     }
 }
 

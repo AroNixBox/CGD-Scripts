@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Gameplay.Runtime.Camera;
 using Sirenix.OdinInspector;
@@ -11,6 +12,10 @@ namespace Gameplay.Runtime.Player.Camera {
         [SerializeField, Required] CinemachineCamera thirdPersonCamera;
         [SerializeField, Required] CinemachineCamera firstPersonCamera;
         [SerializeField, Required] CinemachineCamera bulletCamera;
+        [SerializeField, Required] CinemachineCamera impactCamera;
+        [SerializeField, Required] CinemachineTargetGroup impactTargetGroup;
+        
+        
 
         [Tooltip("Typically the ModelRoot that is actively rotated")]
         [SerializeField, Required] Transform rotationTarget;
@@ -89,6 +94,31 @@ namespace Gameplay.Runtime.Player.Camera {
             bulletCamera.Priority = LowPriority;
             bulletCamera.transform.localPosition = Vector3.zero;
             _targetTracker.FollowTarget = null;
+        }
+
+        // TODO: FIX camera zoom, its was too close....!!!
+        public void EnableImpactCamera(List<Transform> trackingTargets) {
+            if (impactCamera == null) return;
+            if (impactTargetGroup == null) return;
+
+
+            foreach (var t in trackingTargets) {
+                CinemachineTargetGroup.Target target = new() {
+                    Object = t,
+                    Radius = .5f,
+                    Weight = 1
+                };
+                impactTargetGroup.Targets.Add(target);
+            }
+            impactCamera.Priority = HighPriority;
+        }
+        
+        public void ResetImpactCamera() {
+            if (impactCamera == null) return;
+            if (impactTargetGroup == null) return;
+
+            impactCamera.Priority = LowPriority;
+            impactTargetGroup.Targets.Clear();
         }
     }
 }
