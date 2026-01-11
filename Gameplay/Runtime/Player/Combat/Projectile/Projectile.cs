@@ -57,6 +57,21 @@ namespace Gameplay.Runtime.Player.Combat {
             _rb.AddForce(force * direction, ForceMode.Impulse);
         }
 
+        public void InitProxyProjectile(ProjectileImpactData impactData) {
+            Debug.Log("Init of proxy projectile");
+            if (impactData == null)
+                throw new NullReferenceException("Impact Data null");
+
+            _impactData = impactData;
+
+            _lifetimeTimer ??= new CountdownTimer(2f);
+            _lifetimeTimer.Start();
+            _lifetimeTimer.OnTimerStop += OnFallbackExpired;
+
+            _rb.mass = 1;
+            _rb.linearDamping = 0;
+        }
+
         Collision _lastCollision;
         
         void OnCollisionEnter(Collision collision) {

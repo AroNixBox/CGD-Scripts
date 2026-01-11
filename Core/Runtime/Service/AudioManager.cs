@@ -27,5 +27,9 @@ namespace Gameplay.Core.Service {
             if (clip == null) return;
             AudioSource.PlayClipAtPoint(clip, position, volume);
         }
+        public void PlayClipAtAudioManager(AudioClip clip, float volume = 1f) {
+            if (clip == null) return;
+            AudioSource.PlayClipAtPoint(clip, transform.position, volume);
+        }
     }
 }

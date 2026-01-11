@@ -18,6 +18,12 @@ namespace Gameplay.Runtime._Scripts.Gameplay.Runtime.Audio {
             _manager.PlayClipAtPosition(clip, transform.position, volume);
         }
 
+        public void PlayClipAtAudioManager(AudioClip clip) {
+            if (clip == null || _manager == null) return;
+            const float volume = 1f;
+            _manager.PlayClipAtAudioManager(clip, volume);
+        }
+
         public void PlayClipAtPosition(AudioClip clip, Vector3 position, float volume = 1f) {
             if (clip == null || _manager == null) return;
             _manager.PlayClipAtPosition(clip, position, volume);
