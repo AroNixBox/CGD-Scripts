@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -16,7 +17,9 @@ namespace Gameplay.Runtime.Player.Combat {
         }
         
         public ImpactResult OnImpact(ImpactData impactData) {
-            var result = new ImpactResult();
+            var result = new ImpactResult {
+                HitObjectOrigins = new List<Vector3>()
+            };
             
             if (hazardPrefab == null) {
                 Debug.LogWarning("HazardStrategy: No hazard prefab assigned!");
@@ -26,7 +29,9 @@ namespace Gameplay.Runtime.Player.Combat {
             Vector3 spawnPosition = impactData.Position + impactData.Normal * groundOffset;
             Quaternion spawnRotation = Quaternion.FromToRotation(Vector3.up, impactData.Normal);
 
-            UnityEngine.Object.Instantiate(hazardPrefab, spawnPosition, spawnRotation);
+            var hazard = UnityEngine.Object.Instantiate(hazardPrefab, spawnPosition, spawnRotation);
+            
+            // TODO: Could ask for all objects that are affected by hazard, they could be added to ttargetgroup then
             
             return result;
         }

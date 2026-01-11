@@ -1,6 +1,7 @@
 ﻿using System;
 using Core.Runtime.Service.Input;
 using Extensions.FSM;
+using Gameplay.Runtime.Player.Combat;
 using Gameplay.Runtime.Player.States.GroundedSubStates;
 using UnityEngine;
 
@@ -17,25 +18,30 @@ namespace Gameplay.Runtime.Player.States {
         readonly IState _combatStanceState;
         readonly IState _locomotionState;
 
+        // Shared Transition Data
+        Projectile _pendingProjectile;
+
         public GroundedState(PlayerController controller) {
             _inputReader = controller.InputReader;
             _controller = controller;
             
             _stateMachine = new StateMachine();
             IState awaitingAuthorityState = new AwaitingAuthorityState(controller);
-            _combatStanceState = new CombatStanceState(controller);
+            var projectileWatchState = new ProjectileWatchState(controller, () => _pendingProjectile);
+            _combatStanceState = new CombatStanceState(controller, projectile => _pendingProjectile = projectile);
             _locomotionState = new LocomotionState(controller);
 
             // These two can not be Event based, since the status of authority can change outside of grounded
+            At(_combatStanceState, projectileWatchState, () => _pendingProjectile != null);
+            At(projectileWatchState, awaitingAuthorityState, () => projectileWatchState.IsComplete);
             At(awaitingAuthorityState, _locomotionState, HasAuthority);
             At(_locomotionState, awaitingAuthorityState, () => !HasAuthority());
-            At(_combatStanceState, awaitingAuthorityState, () => !HasAuthority());
             
             return;
             
             void At(IState from, IState to, Func<bool> condition) => _stateMachine.AddTransition(from, to, condition);
-            void Any(IState to, Func<bool> condition) => _stateMachine.AddAnyTransition(to, condition);
         }
+        
         bool HasAuthority() => _controller.AuthorityEntity.HasAuthority();
         
         public void OnEnter() {
@@ -64,6 +70,11 @@ namespace Gameplay.Runtime.Player.States {
         }
         public void Tick(float deltaTime) {
             _stateMachine?.Tick(deltaTime);
+            
+            // Reset pending projectile after transition
+            if (_pendingProjectile != null && CurrentState is ProjectileWatchState) {
+                _pendingProjectile = null;
+            }
         }
 
         public void OnExit() {

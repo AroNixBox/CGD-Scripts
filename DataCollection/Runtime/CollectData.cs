@@ -436,12 +436,12 @@ namespace DataCollection.Runtime {
             // Subscribe to the projectile's impact event to wait until the shot actually lands
             projectile.OnImpact += OnProjectileImpact;
 
-            void OnProjectileImpact(Vector3 impactPosition, bool wasActiveImpact, ImpactResult impactResult) {
+            void OnProjectileImpact(Vector3 impactPosition, ImpactResult impactResult) {
                 projectile.OnImpact -= OnProjectileImpact;
 
                 double distanceToTarget = Vector3.Distance(startPosition, impactPosition);
                 // wasActiveImpact indicates if the projectile hit something (true) or expired via lifetime (false)
-                var hit = wasActiveImpact && impactResult.TargetsHit > 0;
+                var hit = impactResult.TargetsHit > 0;
                 double damage = impactResult.TotalDamageDealt;
                 double knockback = impactResult.TotalKnockbackApplied;
 

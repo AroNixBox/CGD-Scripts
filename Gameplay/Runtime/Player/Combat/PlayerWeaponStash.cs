@@ -203,7 +203,7 @@ namespace Gameplay.Runtime.Player.Combat {
 
         public WeaponData GetCurrentWeaponData() => _currentWeaponData;
 
-        public bool TryFire(Action<bool> onProjectileExpired, out Projectile projectile) {
+        public bool TryFire(out Projectile projectile) {
             projectile = null;
             var weapon = GetSpawnedWeapon();
             if (weapon == null) {
@@ -240,7 +240,7 @@ namespace Gameplay.Runtime.Player.Combat {
             entry.ammo--;
             targetList[targetIndex] = entry;
 
-            projectile = weapon.FireWeapon(onProjectileExpired);
+            projectile = weapon.FireWeapon();
             
             OnSuccessfulShot?.Invoke(projectile);
             OnAmmoChanged?.Invoke(targetCategory, entry.weaponData, entry.ammo);

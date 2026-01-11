@@ -15,14 +15,16 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         readonly InputReader _inputReader;
         readonly PlayerController _controller;
         readonly PlayerWeaponStash _weaponStash;
+        readonly Action<Projectile> _onProjectileFired;
         TrajectoryPredictor _trajectoryPredictor;
         
-        public CombatStanceState(PlayerController controller) {
+        public CombatStanceState(PlayerController controller, Action<Projectile> onProjectileFired) {
             _cameraControls = controller.PlayerCameraControls;
             _inputReader = controller.InputReader;
             _controller = controller;
             // _animatorController = controller.AnimatorController;
             _weaponStash = controller.WeaponStash;
+            _onProjectileFired = onProjectileFired;
         }
 
         public void OnEnter() {
@@ -65,35 +67,15 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             spawnedWeapon.transform.forward = activeCameraForward;
         }
         void Attack() {
-            if (!_weaponStash.TryFire(onProjectileExpired: EndTurn, out var projectile)) {
+            if (!_weaponStash.TryFire(out var projectile)) {
                 // No Ammo
                 return;
             }
 
-            _cameraControls.EnableBulletCamera(projectile.transform);
             _controller.AuthorityEntity.ResetAuthority();
+            _onProjectileFired?.Invoke(projectile);
         }
 
-        // Active Impact = Seconds
-        void EndTurn(bool wasActiveImpact) {
-            if (wasActiveImpact) {
-                EndTurnWithDelay().Forget();
-            }
-            else {
-                EndTurnImmediate();
-            }
-        }
-
-        async UniTaskVoid EndTurnWithDelay() {
-            // Let player watch the impact effect before switching to next player
-            await UniTask.Delay(TimeSpan.FromSeconds(_controller.PostImpactDelay), ignoreTimeScale: true);
-            EndTurnImmediate();
-        }
-
-        void EndTurnImmediate() {
-            _cameraControls.ResetBulletCamera();
-            _controller.AuthorityEntity.GiveNextAuthority();
-        }
 
         public void OnExit() {
             _inputReader.Move -= _weaponStash.SelectWeapon;

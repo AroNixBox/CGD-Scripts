@@ -45,7 +45,7 @@ namespace Gameplay.Runtime.Player.Combat {
             _projectileForce = Mathf.Clamp(_projectileForce, _weaponData.GlobalWeaponData.MinProjectileForce, _weaponData.GlobalWeaponData.MaxProjectileForce);
         }
         
-        public Projectile FireWeapon(Action<bool> onProjectileExpired) {
+        public Projectile FireWeapon() {
             // Projectile
             var projectileData = _weaponData.ProjectileData;
             var projectilePrefab = projectileData.projectilePrefab;
@@ -57,7 +57,6 @@ namespace Gameplay.Runtime.Player.Combat {
                 projectileData.drag, 
                 _projectileForce, 
                 muzzlePoint.forward, 
-                onProjectileExpired, 
                 _weaponData.ProjectileData.impactData);
 
             if (_weaponData.ProjectileData.FiredSound != null)
