@@ -333,18 +333,19 @@ namespace DataCollection.Runtime {
         private void OnEnable() {
             if (!_initialized) return;
             AuthorityManager.OnEntitySpawned += HandlePlayerSpawned;
-            _authorityManager.OnEntityAuthorityGained += HandleTurnStart;
-            _authorityManager.OnEntityAuthorityRevoked += HandleTurnEnd;
             AuthorityManager.OnEntityDied += HandlePlayerDied;
             _authorityManager.OnLastEntityRemaining += HandleGameOver;
+            _authorityManager.OnEntityAuthorityGained += HandleTurnStart;
+            _authorityManager.OnEntityAuthorityRevoked += HandleTurnEnd;
         }
 
         private void OnDisable() {
             AuthorityManager.OnEntitySpawned -= HandlePlayerSpawned;
+            AuthorityManager.OnEntityDied -= HandlePlayerDied;
+            if (_authorityManager == null) return;
+            _authorityManager.OnLastEntityRemaining -= HandleGameOver;
             _authorityManager.OnEntityAuthorityGained -= HandleTurnStart;
             _authorityManager.OnEntityAuthorityRevoked -= HandleTurnEnd;
-            AuthorityManager.OnEntityDied -= HandlePlayerDied;
-            _authorityManager.OnLastEntityRemaining -= HandleGameOver;
         }
 
         #endregion

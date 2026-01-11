@@ -11,7 +11,10 @@ namespace UI.Runtime.Menus {
         AuthorityManager _authorityManager;
 
         void OnEnable() {
-            view.BindButtons(onRestart: () => SceneManager.LoadScene(SceneManager.GetActiveScene().name));
+            view.BindButtons(
+                onRestart: () => SceneManager.LoadScene(SceneManager.GetActiveScene().name),
+                onMenu: () => SceneManager.LoadScene("Scenes/User Hub")
+                );
             view.Hide();
         }
 
@@ -21,7 +24,7 @@ namespace UI.Runtime.Menus {
         }
 
         
-        void OpenMenu(AuthorityEntity _) => view.Show();
+        void OpenMenu(AuthorityEntity entity) => view.Show(entity.UserData.Username);
 
 
         void OnDestroy() {

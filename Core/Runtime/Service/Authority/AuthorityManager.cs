@@ -272,7 +272,6 @@ namespace Core.Runtime.Authority {
             
             _nextAuthorityIndex = -1;
             OnLastEntityRemaining.Invoke(_authorityEntities[0]);
-            Debug.Log("<color=red>Last Entity has been Reached, Game Over?</color>");
         }
 
         void HandleAuthorityTransfer(bool hadAuthority) {
