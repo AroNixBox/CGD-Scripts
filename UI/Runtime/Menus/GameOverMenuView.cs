@@ -12,18 +12,26 @@ namespace UI.Runtime.Menus {
         [SerializeField, Required] Button menuButton;
         
         public void Show(string winnerName) {
+            if (gameOverUi == null) {
+                Debug.LogError("Game Over UI is null");
+                return;
+            }
+            if (winnerText == null) {
+                Debug.LogError("Winner Text is null");
+                return;
+            }
+            
             gameOverUi.gameObject.SetActive(true);
-            Time.timeScale = 0;
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.Confined;
             winnerText.text = $"{winnerName} Wins!";
         }
         
         public void Hide() {
+            if (gameOverUi == null) {
+                Debug.LogError("Game Over UI is null");
+                return;
+            }
+            
             gameOverUi.gameObject.SetActive(false);
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
-            Time.timeScale = 1;
         }
         
         public void BindButtons(UnityAction onRestart, UnityAction onMenu) {

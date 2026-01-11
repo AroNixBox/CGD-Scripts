@@ -15,6 +15,9 @@ namespace UI.Runtime.Menus {
                 onRestart: () => SceneManager.LoadScene(SceneManager.GetActiveScene().name),
                 onMenu: () => SceneManager.LoadScene("Scenes/User Hub")
                 );
+            
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
             view.Hide();
         }
 
@@ -24,7 +27,11 @@ namespace UI.Runtime.Menus {
         }
 
         
-        void OpenMenu(AuthorityEntity entity) => view.Show(entity.UserData.Username);
+        void OpenMenu(AuthorityEntity entity) {
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.Confined;
+            view.Show(entity.UserData.Username);
+        }
 
 
         void OnDestroy() {
