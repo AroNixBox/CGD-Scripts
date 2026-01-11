@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using Extensions.FSM;
 using Gameplay.Runtime.Player.Camera;
 using Gameplay.Runtime.Player.Combat;
+using Sirenix.Utilities;
 using UnityEngine;
 
 namespace Gameplay.Runtime.Player.States.GroundedSubStates {
@@ -39,7 +40,7 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         /// We could try to zoom out and capture all POI's
         /// </summary>
         async UniTaskVoid HandleProjectileImpact(Vector3 impactPosition, ImpactResult impactResult) {
-            var go = new GameObject("Projectile Impact Position") {
+            var projectileImpactPosDummy = new GameObject("Projectile Impact Position") {
                transform = {
                    position = impactPosition
                }
@@ -47,17 +48,17 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
            
             // A Damageable can be destroyed, and we still want to observer the point where the damageable was :)
             // Create list with impact position + all POIs
-            var targets = new List<Transform> { go.transform };
-            foreach (var hoE in impactResult.HitObjectOrigins) {
-                var hoT = new GameObject("Hit Object Transform") {
+            var hitObjectOriginDummies = new List<Transform> { projectileImpactPosDummy.transform };
+            foreach (var hitObjectOriginPos in impactResult.HitObjectOrigins) {
+                var hitObjectDummyTransform = new GameObject("Hit Object Transform") {
                     transform = {
-                        position = impactPosition
+                        position = hitObjectOriginPos
                     }
                 }; 
-                targets.Add(hoT.transform);
+                hitObjectOriginDummies.Add(hitObjectDummyTransform.transform);
             }
            
-            _cameraControls.EnableImpactCamera(targets);
+            _cameraControls.EnableImpactCamera(hitObjectOriginDummies);
             _cameraControls.ResetBulletCamera();
             
             // Wait for post-impact delay
