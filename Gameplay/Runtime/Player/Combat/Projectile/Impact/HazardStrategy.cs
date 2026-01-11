@@ -8,7 +8,9 @@ namespace Gameplay.Runtime.Player.Combat {
     public class HazardStrategy : IImpactStrategy {
         [SerializeField, AssetsOnly, Required] 
         GameObject hazardPrefab;
-        
+
+        [SerializeField] List<GameObject> additionalHazards;
+
         [SerializeField, Tooltip("Offset from ground surface")]
         float groundOffset = 0.01f;
 
@@ -30,9 +32,14 @@ namespace Gameplay.Runtime.Player.Combat {
             Quaternion spawnRotation = Quaternion.FromToRotation(Vector3.up, impactData.Normal);
 
             var hazard = UnityEngine.Object.Instantiate(hazardPrefab, spawnPosition, spawnRotation);
-            
+
+            if (additionalHazards != null) {
+                foreach (var h in additionalHazards) {
+                    UnityEngine.Object.Instantiate(h, spawnPosition, spawnRotation);
+                }
+            }
             // TODO: Could ask for all objects that are affected by hazard, they could be added to ttargetgroup then
-            
+
             return result;
         }
     }

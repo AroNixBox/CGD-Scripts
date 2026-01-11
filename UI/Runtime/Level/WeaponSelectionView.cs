@@ -15,6 +15,7 @@ namespace UI.Runtime.Level {
         [SerializeField, Required] WeaponSelectionCategory weaponCategoryPrefab;
         [SerializeField, Required] WeaponSelectionEntry weaponEntryPrefab;
         [SerializeField, Required] TMP_Text currentWeaponNameText;
+        [SerializeField, Required] TMP_Text currentWeaponAmmoText;
         [SerializeField, Required] TMP_Text shootingPowerText;
 
         readonly Dictionary<string, WeaponSelectionCategory> _categories = new();
@@ -42,7 +43,9 @@ namespace UI.Runtime.Level {
             
             // Update current weapon name display
             currentWeaponNameText.text = data.name;
-            
+
+            //currentWeaponAmmoText.text = data.ammo;
+
             // Deselect all
             foreach (var cat in _categories.Values) {
                 cat.DisableOutline();
