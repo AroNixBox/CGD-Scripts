@@ -33,7 +33,7 @@ namespace Gameplay.Runtime.Player.Combat {
                 if (entry.WeaponData == null) continue;
 
                 // 1. Get the category via impact strategy
-                var strategy = entry.WeaponData.ProjectileData.impactData.GetImpactStrategy();
+                var strategy = entry.WeaponData.ProjectileData.ImpactData.GetImpactStrategy();
                 
                 string typeKey;
 

@@ -47,8 +47,8 @@ namespace Gameplay.Runtime.Player.Combat {
             _trajectoryPredictor.PredictTrajectory(
                 GetWeaponProperties(),
                 _projectileForce, 
-                _weaponData.ProjectileData.mass,
-                _weaponData.ProjectileData.drag
+                _weaponData.ProjectileData.Mass,
+                _weaponData.ProjectileData.Drag
             );
         
         public void IncreaseProjectileForce() {
@@ -74,16 +74,16 @@ namespace Gameplay.Runtime.Player.Combat {
         public Projectile FireWeapon() {
             // Projectile
             var projectileData = _weaponData.ProjectileData;
-            var projectilePrefab = projectileData.projectilePrefab;
+            var projectilePrefab = projectileData.ProjectilePrefab;
             
             // Spawned Weapon
             var projectile = Instantiate(projectilePrefab, muzzlePoint.position, muzzlePoint.rotation);
             projectile.Init(
-                projectileData.mass, 
-                projectileData.drag, 
+                projectileData.Mass, 
+                projectileData.Drag, 
                 _projectileForce, 
                 muzzlePoint.forward, 
-                _weaponData.ProjectileData.impactData);
+                _weaponData.ProjectileData.ImpactData);
 
             if (_weaponData.ProjectileData.FiredSound != null)
                 PlayFireSound(_weaponData.ProjectileData.FiredSound);
