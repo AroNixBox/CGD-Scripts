@@ -33,18 +33,21 @@ namespace UI.Runtime.Level {
         }
 
         public void UpdateWeaponAmmo(string categoryName, WeaponData data, int amount) {
-            if (_categories.TryGetValue(categoryName, out var category)) {
-                category.UpdateAmmo(data, amount);
+            if (!_categories.TryGetValue(categoryName, out var category)) {
+                Debug.LogError("[WeaponSelectionView] Could not find category to update ammo: " + categoryName);
+                return;
             }
+            
+            category.UpdateAmmo(data, amount);
         }
+
+        public void UpdateCurrentAmmoDisplay(int amount) => SetCurrentAmmoText(amount);
         
         public void SelectWeapon(string categoryName, WeaponData data) {
             if (!_categories.TryGetValue(categoryName, out var category)) return;
-            
+
             // Update current weapon name display
             currentWeaponNameText.text = data.name;
-
-            //currentWeaponAmmoText.text = data.ammo;
 
             // Deselect all
             foreach (var cat in _categories.Values) {
@@ -104,6 +107,10 @@ namespace UI.Runtime.Level {
 
         public void UpdateShootingPower(float percent) {
             shootingPowerText.text = $"{percent:F0}%";
+        }
+
+        void SetCurrentAmmoText(int amount) {
+            currentWeaponAmmoText.text = amount.ToString();
         }
     }
 }

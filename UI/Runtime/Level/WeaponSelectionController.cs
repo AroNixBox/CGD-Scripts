@@ -43,11 +43,17 @@ namespace UI.Runtime.Level {
             view.AddWeapon(category, weaponData);
         }
 
+        // Necessary to update ammo count while shooting (live update)
         void UpdateWeaponAmmo(string category, WeaponData weaponData, int amount) {
             view.UpdateWeaponAmmo(category, weaponData, amount);
+            
+            if (weaponStash.GetCurrentWeaponData() == weaponData) {
+                view.UpdateCurrentAmmoDisplay(amount);
+            }
         }
 
-        void SelectWeaponInUI(string category, WeaponData weaponData) {
+        void SelectWeaponInUI(string category, WeaponData weaponData, int ammo) {
+            view.UpdateCurrentAmmoDisplay(ammo); // Set the current ammo display
             view.SelectWeapon(category, weaponData);
         }
         

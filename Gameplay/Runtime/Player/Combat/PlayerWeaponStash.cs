@@ -21,7 +21,7 @@ namespace Gameplay.Runtime.Player.Combat {
 
         // Events
         public event Action<string, WeaponData> OnWeaponDataAdded = delegate { };
-        public event Action<string, WeaponData> OnWeaponDataSelected = delegate { };
+        public event Action<string, WeaponData, int> OnWeaponDataSelected = delegate { };
         public event Action<string, WeaponData, int> OnAmmoChanged = delegate { };
         public event Action<Projectile> OnSuccessfulShot = delegate { };
         public event Action<float> OnProjectileForceChanged = delegate { };
@@ -64,15 +64,14 @@ namespace Gameplay.Runtime.Player.Combat {
                 _weaponCategoryDatasMapping[typeKey].Add((entry.WeaponData, entry.Ammunition));
                 
                 // Events
-                OnWeaponDataAdded.Invoke(typeKey, entry.WeaponData);
-                OnAmmoChanged.Invoke(typeKey, entry.WeaponData, entry.Ammunition);
+                OnWeaponDataAdded?.Invoke(typeKey, entry.WeaponData);
             }
 
             // Set first weapon of first category
             if (_weaponCategoryDatasMapping.Count > 0) {
                  var firstGroup = _weaponCategoryDatasMapping.Values.FirstOrDefault();
                  if (firstGroup is { Count: > 0 }) {
-                     _currentWeaponData = firstGroup[0].weaponData;
+                     SelectWeapon(firstGroup[0].weaponData);
                  }
             }
         }
@@ -178,9 +177,11 @@ namespace Gameplay.Runtime.Player.Combat {
             
             // Save index for that category, so we can return to it later
             var categoryList = _weaponCategoryDatasMapping[foundCategory];
+            int currentAmmo = 0;
             for (int i = 0; i < categoryList.Count; i++) {
                 if (categoryList[i].weaponData == weaponData) {
                     _lastSelectedIndexPerCategory[foundCategory] = i;
+                    currentAmmo = categoryList[i].ammo;
                     break;
                 }
             }
@@ -189,7 +190,7 @@ namespace Gameplay.Runtime.Player.Combat {
             DespawnSelectedWeapon();
             
             _currentWeaponData = weaponData;
-            OnWeaponDataSelected.Invoke(foundCategory, _currentWeaponData);
+            OnWeaponDataSelected.Invoke(foundCategory, _currentWeaponData, currentAmmo);
             
             SpawnSelectedWeapon();
         }
