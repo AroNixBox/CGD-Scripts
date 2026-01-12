@@ -1,4 +1,4 @@
-﻿using Core.Runtime.Authority;
+﻿﻿using Core.Runtime.Authority;
 using Core.Runtime.Service;
 using Core.Runtime.Service.Input;
 using Gameplay.Runtime.Player;
@@ -10,6 +10,7 @@ namespace UI.Runtime.Menus {
     public class PauseMenuController : MonoBehaviour {
         [SerializeField, Required] PauseMenuView view;
         [SerializeField, Required] InputReader inputReader;
+        [SerializeField, Required] GameOverMenuView gameOverMenuView;
         
         bool _isInCombatStance;
         PlayerController _activePlayerController;
@@ -72,6 +73,9 @@ namespace UI.Runtime.Menus {
         }
 
         void TogglePauseMenu() {
+            // Don't open pause menu while game over menu is visible
+            if (gameOverMenuView != null && gameOverMenuView.IsVisible) return;
+            
             if (view.IsVisible) {
                 ResumeGame();
             } else {
@@ -80,11 +84,13 @@ namespace UI.Runtime.Menus {
         }
 
         void PauseGame() {
+            inputReader.DisableActionMap(InputReader.ActionMapName.Player);
             view.Show();
         }
 
         void ResumeGame() {
             view.Hide();
+            inputReader.EnableActionMap(InputReader.ActionMapName.Player);
         }
 
         void GoToMainMenu() {

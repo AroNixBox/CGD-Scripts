@@ -33,6 +33,7 @@ namespace Gameplay.Runtime.Player.States {
 
             // These two can not be Event based, since the status of authority can change outside of grounded
             At(_combatStanceState, projectileWatchState, () => _pendingProjectile != null);
+            At(_combatStanceState, awaitingAuthorityState, () => !HasAuthority() && _pendingProjectile == null);
             At(projectileWatchState, awaitingAuthorityState, () => projectileWatchState.IsComplete);
             At(awaitingAuthorityState, _locomotionState, HasAuthority);
             At(_locomotionState, awaitingAuthorityState, () => !HasAuthority());

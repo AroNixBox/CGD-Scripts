@@ -11,6 +11,8 @@ namespace UI.Runtime.Menus {
         [SerializeField, Required] Button restartButton;
         [SerializeField, Required] Button menuButton;
         
+        public bool IsVisible => gameOverUi != null && gameOverUi.gameObject.activeSelf;
+        
         public void Show(string winnerName) {
             if (gameOverUi == null) {
                 Debug.LogError("Game Over UI is null");
@@ -21,6 +23,8 @@ namespace UI.Runtime.Menus {
                 return;
             }
             
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.Confined;
             gameOverUi.gameObject.SetActive(true);
             winnerText.text = $"{winnerName} Wins!";
         }
