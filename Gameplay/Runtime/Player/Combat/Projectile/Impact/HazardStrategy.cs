@@ -19,9 +19,7 @@ namespace Gameplay.Runtime.Player.Combat {
         }
         
         public ImpactResult OnImpact(ImpactData impactData) {
-            var result = new ImpactResult {
-                HitObjectOrigins = new List<Vector3>()
-            };
+            var result = new ImpactResult();
             
             if (hazardPrefab == null) {
                 Debug.LogWarning("HazardStrategy: No hazard prefab assigned!");

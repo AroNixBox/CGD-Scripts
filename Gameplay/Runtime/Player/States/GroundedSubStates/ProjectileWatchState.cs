@@ -50,9 +50,13 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             // Create list with impact position + all POIs
             var hitObjectOriginDummies = new List<Transform> { projectileImpactPosDummy.transform };
             foreach (var hitObjectOriginPos in impactResult.HitObjectOrigins) {
+                if (hitObjectOriginPos.obj != null) {
+                    hitObjectOriginDummies.Add(hitObjectOriginPos.obj);
+                }
+                
                 var hitObjectDummyTransform = new GameObject("Hit Object Transform") {
                     transform = {
-                        position = hitObjectOriginPos
+                        position = hitObjectOriginPos.origin
                     }
                 }; 
                 hitObjectOriginDummies.Add(hitObjectDummyTransform.transform);

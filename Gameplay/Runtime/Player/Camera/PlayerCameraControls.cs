@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Gameplay.Runtime.Camera;
 using Sirenix.OdinInspector;
 using Unity.Cinemachine;
 using UnityEngine;
+using Common.Runtime._Scripts.Common.Runtime.Extensions;
 
 namespace Gameplay.Runtime.Player.Camera {
     // TODO: Disable Camera Controls when losing authority, re-enable when gaining authority.
@@ -88,6 +88,7 @@ namespace Gameplay.Runtime.Player.Camera {
             _targetTracker.FollowTarget = target;
             bulletCamera.Priority = HighPriority;
         }
+        
         public void ResetBulletCamera() {
             if (bulletCamera == null) return; // BulletCam was destroyed
             
@@ -100,8 +101,7 @@ namespace Gameplay.Runtime.Player.Camera {
         public void EnableImpactCamera(List<Transform> trackingTargets) {
             if (impactCamera == null) return;
             if (impactTargetGroup == null) return;
-
-
+            
             foreach (var t in trackingTargets) {
                 CinemachineTargetGroup.Target target = new() {
                     Object = t,

@@ -26,7 +26,7 @@ namespace Gameplay.Runtime.Player.Combat {
         // [field: SerializeField] public float DistanceMultiplierValue { get; private set; }
         public ImpactResult OnImpact(Vector3 impactPosition) {
             var result = new ImpactResult {
-                HitObjectOrigins = new List<Vector3>()
+                HitObjectOrigins = new List<(Transform, Vector3)>()
             };
             var overlappedObjects = Physics.OverlapSphere(impactPosition, aoeRadius);
                 
@@ -42,7 +42,17 @@ namespace Gameplay.Runtime.Player.Combat {
                 var distanceScore = Mathf.Clamp(distanceObjectFromCenter / aoeRadius, 0, 1); 
                 var intensity = damageDropoffCurve.Evaluate(distanceScore);
 
-                result.HitObjectOrigins.Add(overlappedObject.transform.position);
+                result.HitObjectOrigins.Add((overlappedObject.transform, overlappedObject.transform.position));
+
+                var allColliders = overlappedObject.transform.GetComponentsInChildren<Collider>();
+                if (allColliders.Length > 0) {
+                    var bounds = allColliders[0].bounds;
+                    foreach (var col in allColliders) bounds.Encapsulate(col.bounds);
+                    
+                    var topPoint = new Vector3(bounds.center.x, bounds.max.y, bounds.center.z);
+                    result.HitObjectOrigins.Add((overlappedObject.transform, topPoint));
+                }
+                
                 result.TotalDamageDealt = ApplyDamage(damageable, intensity);
                 result.TotalKnockbackApplied = ApplyPhysics(damageable, intensity, impactPosition);
             }
