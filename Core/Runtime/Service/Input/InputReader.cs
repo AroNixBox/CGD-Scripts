@@ -15,16 +15,20 @@ namespace Core.Runtime.Service.Input {
     public class InputReader : ScriptableObject, InputSystem_Actions.IPlayerActions, InputSystem_Actions.IUIActions, IInputReader {
         [SerializeField] ActionMapName initialActionMap = ActionMapName.Player;
         // The actual input actions asset. This will be initialized in EnablePlayerActions
-        public InputSystem_Actions InputActions { get; private set; }
+        InputSystem_Actions _inputActions;
+        public InputSystem_Actions InputActions => _inputActions;
+        public Vector2 LastLookDirection { get; private set; }
+        public bool IsCurrentDeviceMouse { get; private set; }
+        
         ActionMapName _currentActionMap;
         readonly Dictionary<ActionMapName, InputActionMap> _actionMaps = new();
         
         #region Player Map Shared Data
 
         public event UnityAction<Vector2> Move = delegate { };
-        public bool IsWeaponForceIncreasing => InputActions.Player.IncreaseWeaponForce.IsPressed();
-        public bool IsWeaponForceDecreasing => InputActions.Player.DecreaseWeaponForce.IsPressed();
-        public Vector2 MoveDirection => InputActions.Player.Move.ReadValue<Vector2>();
+        public bool IsWeaponForceIncreasing => _inputActions.Player.IncreaseWeaponForce.IsPressed();
+        public bool IsWeaponForceDecreasing => _inputActions.Player.DecreaseWeaponForce.IsPressed();
+        public Vector2 MoveDirection => _inputActions.Player.Move.ReadValue<Vector2>();
         public event UnityAction<Vector2, bool> LookDirection = delegate { }; // Look Direction Changed & Input Device Mouse?
         public event UnityAction<bool> IsLooking = delegate { }; // Is the Player Currently trying to look around, Important due to controller deadzone when trying to look
         public event UnityAction Fire = delegate { };
@@ -86,9 +90,12 @@ namespace Core.Runtime.Service.Input {
                     break;
                 case {phase: InputActionPhase.Canceled}:
                     IsLooking.Invoke(false);
+                    LastLookDirection = Vector2.zero;
                     break;
                 case {phase: InputActionPhase.Performed}:
-                    LookDirection.Invoke(context.ReadValue<Vector2>(), IsDeviceMouse(context));
+                    LastLookDirection = context.ReadValue<Vector2>();
+                    IsCurrentDeviceMouse = IsDeviceMouse(context);
+                    LookDirection.Invoke(context.ReadValue<Vector2>(), IsCurrentDeviceMouse);
                     break;
             }
         }
@@ -146,22 +153,22 @@ namespace Core.Runtime.Service.Input {
             return context.control.device.name == "Mouse";
         }
         public void EnablePlayerActions() {
-            InputActions ??= new InputSystem_Actions();
+            _inputActions ??= new InputSystem_Actions();
             
-            InputActions.Player.SetCallbacks(this);
-            InputActions.UI.SetCallbacks(this);
+            _inputActions.Player.SetCallbacks(this);
+            _inputActions.UI.SetCallbacks(this);
             
-            AddActionMap(ActionMapName.Player, InputActions.Player);
-            AddActionMap(ActionMapName.UI, InputActions.UI);
+            AddActionMap(ActionMapName.Player, _inputActions.Player);
+            AddActionMap(ActionMapName.UI, _inputActions.UI);
             // TODO: Add more action maps here
             
             switch (initialActionMap) {
                 case ActionMapName.Player:
-                    InputActions.Player.Enable();
+                    _inputActions.Player.Enable();
                     _currentActionMap = ActionMapName.Player;
                     break;
                 case ActionMapName.UI:
-                    InputActions.UI.Enable();
+                    _inputActions.UI.Enable();
                     _currentActionMap = ActionMapName.UI;
                     break;
                 default: 
@@ -190,7 +197,7 @@ namespace Core.Runtime.Service.Input {
         }
 
         public void SwitchActionMap(ActionMapName newMap) {
-            if (InputActions == null) {
+            if (_inputActions == null) {
                 Debug.LogError("InputActions not initialized");
                 return;
             }

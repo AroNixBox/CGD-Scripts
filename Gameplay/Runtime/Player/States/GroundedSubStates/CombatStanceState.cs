@@ -7,6 +7,7 @@ using Gameplay.Runtime.Player.Camera;
 using Gameplay.Runtime.Player.Combat;
 using Gameplay.Runtime.Player.Trajectory;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Gameplay.Runtime.Player.States.GroundedSubStates {
     public class CombatStanceState : IState {
@@ -60,11 +61,15 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
 
         // Weapon Fwd = Camera Fwd
         void AimWeapon() {
-            // TODO: Move WeaponSlot with the rotation 
-            var firstPersonCamera = _cameraControls.GetActiveCameraTransform();
-            var activeCameraForward = firstPersonCamera.forward;
             var spawnedWeapon = _weaponStash.GetSpawnedWeapon();
-            spawnedWeapon.transform.forward = activeCameraForward;
+            if (spawnedWeapon == null) return;
+
+            var socket = spawnedWeapon.transform.parent;
+            if (!socket.TryGetComponent(out WeaponSway sway)) {
+                sway = socket.gameObject.AddComponent<WeaponSway>();
+            }
+
+            sway.ProcessSway(_inputReader.LastLookDirection, _inputReader.IsCurrentDeviceMouse);
         }
         void Attack() {
             if (!_weaponStash.TryFire(out var projectile)) {
