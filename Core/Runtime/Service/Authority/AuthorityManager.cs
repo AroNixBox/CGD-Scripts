@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Common.Runtime._Scripts.Common.Runtime.Extensions;
 using Core.Runtime.Backend;
+using Core.Runtime.Data;
 using Core.Runtime.Service;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
@@ -13,7 +14,7 @@ namespace Core.Runtime.Authority {
     /// Caches the last owner to allow validation during the period between turn end and next turn start.
     /// </summary>
     public class AuthorityManager : MonoBehaviour {
-        [SerializeField, Required] AuthorityEntity authorityEntityPrefab;
+        [SerializeField, Required] CharacterDatabase characterDatabase;
         [SerializeField, Required] List<Transform> authorityEntitiesSpawnPoints;
         [SerializeField, Tooltip("Delay in seconds between each entity spawn")]
         float spawnInterval = 1.5f;
@@ -90,8 +91,15 @@ namespace Core.Runtime.Authority {
                 // Get unique spawnpoint (recycle if all are used)
                 var spawnPoint = GetNextSpawnPoint();
                 
+                var prefabToSpawn = characterDatabase.GetPrefabForIcon(userData.UserIcon);
+                if (prefabToSpawn == null) {
+                    Debug.LogError($"[AuthorityManager] No Prefab mapping found for Sprite '{userData.UserIcon?.name}'. Check your Inspector configuration!");
+                    if(characterDatabase.Count > 0) prefabToSpawn = characterDatabase.GetPrefabAtIndex(0);
+                    else continue;
+                }
+
                 // Spawn Entity & Init
-                var spawnedEntity = Instantiate(authorityEntityPrefab, spawnPoint.position, spawnPoint.rotation);
+                var spawnedEntity = Instantiate(prefabToSpawn, spawnPoint.position, spawnPoint.rotation);
                 spawnedEntity.Initialize(this, userData);
                 
                 _authorityEntities.Add(spawnedEntity);
@@ -140,6 +148,7 @@ namespace Core.Runtime.Authority {
                 OnTurnTimerExpired.Invoke();
                 
                 if (autoEndTurnOnTimeout && _currentAuthority != null) {
+                    ResetAuthority(_currentAuthority);
                     GiveNextEntityAuthority();
                 }
             }
@@ -154,7 +163,7 @@ namespace Core.Runtime.Authority {
         /// <summary>
         /// Stops the turn timer without ending the turn.
         /// </summary>
-        public void StopTimer() {
+        void StopTimer() {
             _isTimerRunning = false;
         }
         
@@ -174,7 +183,6 @@ namespace Core.Runtime.Authority {
         public bool IsTimerRunning => _isTimerRunning;
         
         void OnDestroy() => ServiceLocator.Unregister<AuthorityManager>();
-
         
         /// <summary>
         /// Advances to the next player in the list.

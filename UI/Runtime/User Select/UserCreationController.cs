@@ -1,6 +1,7 @@
 ﻿using System;
 using Core.Runtime;
 using Core.Runtime.Backend;
+using Core.Runtime.Data;
 using Core.Runtime.Service;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -8,7 +9,7 @@ using UnityEngine;
 namespace UI.Runtime {
     public class UserCreationController : MonoBehaviour {
         [SerializeField, Required] UserCreationView view;
-        [SerializeField, Required] Sprite[] availableIcons;
+        [SerializeField, Required][InlineEditor] CharacterDatabase characterDatabase;
         public event Action OnSubmitUser = delegate { };
         int _currentSpriteIndex = -1;
         string _currentUsername;
@@ -24,9 +25,9 @@ namespace UI.Runtime {
             return;
             
             void InitializeIcon() {
-                if (availableIcons is { Length: > 0 }) {
+                if (characterDatabase != null && characterDatabase.Count > 0) {
                     _currentSpriteIndex = 0;
-                    view.SetIcon(availableIcons[_currentSpriteIndex]);
+                    view.SetIcon(characterDatabase.GetIconAtIndex(_currentSpriteIndex));
                 } else {
                     Debug.LogWarning("[UserCreationController] no availableIcons assigned");
                 }
@@ -52,7 +53,7 @@ namespace UI.Runtime {
                 return;
             }
 
-            if (_currentSpriteIndex < 0 || availableIcons == null || _currentSpriteIndex >= availableIcons.Length) {
+            if (_currentSpriteIndex < 0 || characterDatabase == null || _currentSpriteIndex >= characterDatabase.Count) {
                 Debug.LogWarning("[UserCreationController] Submit aborted: no sprite selected");
                 return;
             }
@@ -63,7 +64,7 @@ namespace UI.Runtime {
             }
             
             var newUser = new UserData {
-                UserIcon = availableIcons[_currentSpriteIndex],
+                UserIcon = characterDatabase.GetIconAtIndex(_currentSpriteIndex),
                 Username = _currentUsername
             };
             gameManager.AddUserData(newUser);
@@ -73,16 +74,16 @@ namespace UI.Runtime {
         }
 
         void ChangeIndex(int delta) {
-            if (availableIcons == null || availableIcons.Length == 0) return;
+            if (characterDatabase == null || characterDatabase.Count == 0) return;
 
             if (_currentSpriteIndex < 0) {
-                _currentSpriteIndex = delta > 0 ? 0 : availableIcons.Length - 1;
+                _currentSpriteIndex = delta > 0 ? 0 : characterDatabase.Count - 1;
             } else {
-                int n = availableIcons.Length;
+                int n = characterDatabase.Count;
                 _currentSpriteIndex = (_currentSpriteIndex + delta + n) % n;
             }
 
-            var sprite = availableIcons[_currentSpriteIndex];
+            var sprite = characterDatabase.GetIconAtIndex(_currentSpriteIndex);
             view?.SetIcon(sprite);
         }
     }
