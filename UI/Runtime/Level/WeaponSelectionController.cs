@@ -39,12 +39,12 @@ namespace UI.Runtime.Level {
             }
         }
 
-        void AddWeapon(string category, WeaponData weaponData) {
+        void AddWeapon(ProjectileData.ProjectileCategory category, WeaponData weaponData) {
             view.AddWeapon(category, weaponData);
         }
 
         // Necessary to update ammo count while shooting (live update)
-        void UpdateWeaponAmmo(string category, WeaponData weaponData, int amount) {
+        void UpdateWeaponAmmo(ProjectileData.ProjectileCategory category, WeaponData weaponData, int amount) {
             view.UpdateWeaponAmmo(category, weaponData, amount);
             
             if (weaponStash.GetCurrentWeaponData() == weaponData) {
@@ -52,8 +52,8 @@ namespace UI.Runtime.Level {
             }
         }
 
-        void SelectWeaponInUI(string category, WeaponData weaponData, int ammo) {
-            view.UpdateCurrentAmmoDisplay(ammo); // Set the current ammo display
+        void SelectWeaponInUI(ProjectileData.ProjectileCategory category, WeaponData weaponData, int ammo) {
+            view.UpdateCurrentAmmoDisplay(ammo);
             view.SelectWeapon(category, weaponData);
         }
         

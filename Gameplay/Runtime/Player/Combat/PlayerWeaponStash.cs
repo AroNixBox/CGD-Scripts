@@ -9,8 +9,8 @@ namespace Gameplay.Runtime.Player.Combat {
         [SerializeField, Required] WeaponLoadout loadout;
         [SerializeField, Required] Transform weaponSocket;
 
-        readonly Dictionary<string, List<(WeaponData weaponData, int ammo)>> _weaponCategoryDatasMapping = new();
-        readonly Dictionary<string, int> _lastSelectedIndexPerCategory = new();
+        readonly Dictionary<ProjectileData.ProjectileCategory, List<(WeaponData weaponData, int ammo)>> _weaponCategoryDatasMapping = new();
+        readonly Dictionary<ProjectileData.ProjectileCategory, int> _lastSelectedIndexPerCategory = new();
         
         WeaponData _currentWeaponData;
         Weapon _spawnedWeapon; 
@@ -20,9 +20,9 @@ namespace Gameplay.Runtime.Player.Combat {
         bool _inputReset = true;
 
         // Events
-        public event Action<string, WeaponData> OnWeaponDataAdded = delegate { };
-        public event Action<string, WeaponData, int> OnWeaponDataSelected = delegate { };
-        public event Action<string, WeaponData, int> OnAmmoChanged = delegate { };
+        public event Action<ProjectileData.ProjectileCategory, WeaponData> OnWeaponDataAdded = delegate { };
+        public event Action<ProjectileData.ProjectileCategory, WeaponData, int> OnWeaponDataSelected = delegate { };
+        public event Action<ProjectileData.ProjectileCategory, WeaponData, int> OnAmmoChanged = delegate { };
         public event Action<Projectile> OnSuccessfulShot = delegate { };
         public event Action<float> OnProjectileForceChanged = delegate { };
 
@@ -31,40 +31,19 @@ namespace Gameplay.Runtime.Player.Combat {
 
             foreach (var entry in loadout.WeaponLoadoutEntries) {
                 if (entry.WeaponData == null) continue;
-
-                // 1. Get the category via impact strategy
-                var strategy = entry.WeaponData.ProjectileData.ImpactData.GetImpactStrategy();
                 
-                string typeKey;
-
-                // if impact strategy is aoe differentiate between damage and yeet
-                // Yeet = >5dmg and some knockback
-                // Else Damage
-                if (strategy is AOEDamageStrategy aoeStrategy) {
-                    if (aoeStrategy.MaximumDamage > 5 && aoeStrategy.MaximumExplosionForce > 0) {
-                        typeKey = "Yeet";
-                    }
-                    else {
-                        typeKey = "Damage";
-                    }
-                }
-                else {
-                    // Fallback, null strategory, map under uncategorized
-                    typeKey = strategy != null 
-                        ? strategy.GetType().ToString() 
-                        : "Uncategorized";
-                }
+                var category = entry.WeaponData.ProjectileData.Category;
 
                 // 2. Add List in Dict if no entry yet for that category
-                if (!_weaponCategoryDatasMapping.ContainsKey(typeKey)) {
-                    _weaponCategoryDatasMapping[typeKey] = new List<(WeaponData, int)>();
+                if (!_weaponCategoryDatasMapping.ContainsKey(category)) {
+                    _weaponCategoryDatasMapping[category] = new List<(WeaponData, int)>();
                 }
                 
                 // 3. Add weapon and ammunition from the loadout
-                _weaponCategoryDatasMapping[typeKey].Add((entry.WeaponData, entry.Ammunition));
+                _weaponCategoryDatasMapping[category].Add((entry.WeaponData, entry.Ammunition));
                 
                 // Events
-                OnWeaponDataAdded?.Invoke(typeKey, entry.WeaponData);
+                OnWeaponDataAdded?.Invoke(category, entry.WeaponData);
             }
 
             // Set first weapon of first category
@@ -159,7 +138,7 @@ namespace Gameplay.Runtime.Player.Combat {
         void SelectWeapon(WeaponData weaponData) {
             if (weaponData == null) return;
 
-            string foundCategory = null;
+            ProjectileData.ProjectileCategory? foundCategory = null;
 
             // Find the WeaponData
             foreach (var kvp in _weaponCategoryDatasMapping) {
@@ -176,11 +155,11 @@ namespace Gameplay.Runtime.Player.Combat {
             }
             
             // Save index for that category, so we can return to it later
-            var categoryList = _weaponCategoryDatasMapping[foundCategory];
+            var categoryList = _weaponCategoryDatasMapping[foundCategory.Value];
             int currentAmmo = 0;
             for (int i = 0; i < categoryList.Count; i++) {
                 if (categoryList[i].weaponData == weaponData) {
-                    _lastSelectedIndexPerCategory[foundCategory] = i;
+                    _lastSelectedIndexPerCategory[foundCategory.Value] = i;
                     currentAmmo = categoryList[i].ammo;
                     break;
                 }
@@ -190,7 +169,7 @@ namespace Gameplay.Runtime.Player.Combat {
             DespawnSelectedWeapon();
             
             _currentWeaponData = weaponData;
-            OnWeaponDataSelected.Invoke(foundCategory, _currentWeaponData, currentAmmo);
+            OnWeaponDataSelected.Invoke(foundCategory.Value, _currentWeaponData, currentAmmo);
             
             SpawnSelectedWeapon();
         }
@@ -222,7 +201,7 @@ namespace Gameplay.Runtime.Player.Combat {
             }
 
             // Get fitting tuple to find ammunition
-            string targetCategory = null;
+            ProjectileData.ProjectileCategory? targetCategory = null;
             List<(WeaponData weaponData, int ammo)> targetList = null;
             int targetIndex = -1;
 
@@ -253,7 +232,7 @@ namespace Gameplay.Runtime.Player.Combat {
             projectile = weapon.FireWeapon();
             
             OnSuccessfulShot?.Invoke(projectile);
-            OnAmmoChanged?.Invoke(targetCategory, entry.weaponData, entry.ammo);
+            OnAmmoChanged?.Invoke(targetCategory.Value, entry.weaponData, entry.ammo);
             return true;
         }
 

@@ -18,9 +18,9 @@ namespace UI.Runtime.Level {
         [SerializeField, Required] TMP_Text currentWeaponAmmoText;
         [SerializeField, Required] TMP_Text shootingPowerText;
 
-        readonly Dictionary<string, WeaponSelectionCategory> _categories = new();
+        readonly Dictionary<ProjectileData.ProjectileCategory, WeaponSelectionCategory> _categories = new();
 
-        public void AddWeapon(string categoryName, WeaponData data) {
+        public void AddWeapon(ProjectileData.ProjectileCategory categoryName, WeaponData data) {
             // 1. Get or Create Category
             if (!_categories.TryGetValue(categoryName, out var category)) {
                 category = Instantiate(weaponCategoryPrefab, weaponCategoriesParent);
@@ -32,7 +32,7 @@ namespace UI.Runtime.Level {
             category.AddEntry(weaponEntryPrefab, data);
         }
 
-        public void UpdateWeaponAmmo(string categoryName, WeaponData data, int amount) {
+        public void UpdateWeaponAmmo(ProjectileData.ProjectileCategory categoryName, WeaponData data, int amount) {
             if (!_categories.TryGetValue(categoryName, out var category)) {
                 Debug.LogError("[WeaponSelectionView] Could not find category to update ammo: " + categoryName);
                 return;
@@ -43,7 +43,7 @@ namespace UI.Runtime.Level {
 
         public void UpdateCurrentAmmoDisplay(int amount) => SetCurrentAmmoText(amount);
         
-        public void SelectWeapon(string categoryName, WeaponData data) {
+        public void SelectWeapon(ProjectileData.ProjectileCategory categoryName, WeaponData data) {
             if (!_categories.TryGetValue(categoryName, out var category)) return;
 
             // Update current weapon name display

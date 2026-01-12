@@ -4,8 +4,6 @@ using UnityEngine;
 namespace Gameplay.Runtime.Player.Combat {
     [CreateAssetMenu(menuName = "Player/Combat/Projectile Data")]
     public class ProjectileData: ScriptableObject {
-        // TODO: ShotPattern (How many are fired, etc..)
-
         [SerializeField, HideInInspector] Projectile projectilePrefab;
         public Projectile ProjectilePrefab => projectilePrefab;
 
@@ -21,6 +19,17 @@ namespace Gameplay.Runtime.Player.Combat {
                 else if (value.TryGetComponent(out Projectile p)) projectilePrefab = p;
             }
         }
+        public enum ProjectileCategory {
+            Uncategorized,
+            Damage,
+            Yeet,
+            Hazard
+        }
+        [BoxGroup("General Settings")] [SerializeField] [EnumToggleButtons]
+        ProjectileCategory projectileCategory = ProjectileCategory.Uncategorized;
+        public ProjectileCategory Category => projectileCategory;
+
+        
 
         [BoxGroup("General Settings")]
         [Title("Shared Configuration")]
