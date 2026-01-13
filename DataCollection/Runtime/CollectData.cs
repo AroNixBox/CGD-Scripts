@@ -428,7 +428,7 @@ namespace DataCollection.Runtime {
         }
 
         private void HandleOnActivePlayerFired(Projectile projectile) {
-            var weaponName = projectile.name.Replace("(Clone)", "").Trim();
+            var weaponName = projectile.GetImpactData().name;
             var uniqueId = GetUniqueId(_currentAuthorityEntity);
             if (uniqueId == null) return;
 
