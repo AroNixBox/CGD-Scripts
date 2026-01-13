@@ -110,7 +110,11 @@ namespace UI.Runtime.Level {
         }
 
         void SetCurrentAmmoText(int amount) {
-            currentWeaponAmmoText.text = amount.ToString();
+            if (amount > 100) {
+                currentWeaponAmmoText.text = "Ammo: ∞";
+            } else {
+                currentWeaponAmmoText.text = "Ammo: " + amount;
+            }
         }
     }
 }
