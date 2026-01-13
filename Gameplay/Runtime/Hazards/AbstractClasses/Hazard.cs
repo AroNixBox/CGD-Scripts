@@ -31,6 +31,7 @@ namespace Gameplay.Runtime {
         protected readonly Dictionary<AuthorityEntity, HazardData> EntitiesInHazard = new();
         protected int TurnCounter = 0;
 
+        // 2.
         protected virtual void Start() {
             ValidateInheritance();
             if (!ServiceLocator.TryGet(out AuthorityManager))
@@ -38,13 +39,19 @@ namespace Gameplay.Runtime {
             HazardCollider = GetComponent<Collider>();
             if (!HazardCollider.isTrigger) 
                 throw new ArgumentException("Collider must be set as Trigger");
+
+            OnEnable();
         }
 
+        // 1.
         protected virtual void OnEnable() {
+            if(!AuthorityManager) return;
             if(turnDuration >= 0) AuthorityManager.OnEntityAuthorityGained += CheckAlive;
         }
+
         
         protected virtual void OnDisable() {
+            if (AuthorityManager == null) return;
             if(turnDuration >= 0) AuthorityManager.OnEntityAuthorityGained -= CheckAlive;
         }
         
