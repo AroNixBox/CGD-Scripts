@@ -50,7 +50,7 @@ namespace Gameplay.Runtime.Player.Combat {
             if (_weaponCategoryDatasMapping.Count > 0) {
                  var firstGroup = _weaponCategoryDatasMapping.Values.FirstOrDefault();
                  if (firstGroup is { Count: > 0 }) {
-                     SelectWeapon(firstGroup[0].weaponData);
+                     _currentWeaponData = firstGroup[0].weaponData;
                  }
             }
         }
