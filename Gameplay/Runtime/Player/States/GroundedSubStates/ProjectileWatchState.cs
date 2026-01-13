@@ -61,13 +61,12 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
                 }; 
                 hitObjectOriginDummies.Add(hitObjectDummyTransform.transform);
             }
-           
-            _cameraControls.EnableImpactCamera(hitObjectOriginDummies);
-            _cameraControls.ResetBulletCamera();
+            // TODO: Add all targets that we hit to the target group
+            _cameraControls.SetBulletCameraTargets(hitObjectOriginDummies);
             
             // Wait for post-impact delay
             await UniTask.WaitForSeconds(_controller.PostImpactDelay * 3);
-            _cameraControls.ResetImpactCamera();
+            _cameraControls.ResetBulletCamera();
             CompleteState();
         }
 

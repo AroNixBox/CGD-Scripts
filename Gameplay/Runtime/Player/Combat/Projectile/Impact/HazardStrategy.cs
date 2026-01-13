@@ -32,15 +32,63 @@ namespace Gameplay.Runtime.Player.Combat {
             Quaternion spawnRotation = Quaternion.FromToRotation(Vector3.up, impactData.Normal);
 
             var hazard = UnityEngine.Object.Instantiate(hazardPrefab, spawnPosition, spawnRotation);
+            
+            // Add hazard bounds points to hit origins (origin, top corners, elevated)
+            foreach (var point in GetBoundsPoints(hazard)) {
+                result.HitObjectOrigins.Add((hazard.transform, point));
+            }
 
             if (additionalHazards != null) {
                 foreach (var h in additionalHazards) {
-                    UnityEngine.Object.Instantiate(h, spawnPosition, spawnRotation);
+                    var additionalHazard = UnityEngine.Object.Instantiate(h, spawnPosition, spawnRotation);
+                    foreach (var point in GetBoundsPoints(additionalHazard)) {
+                        result.HitObjectOrigins.Add((additionalHazard.transform, point));
+                    }
                 }
             }
-            // TODO: Could ask for all objects that are affected by hazard, they could be added to ttargetgroup then
 
             return result;
+        }
+        
+        Vector3[] GetBoundsPoints(GameObject obj) {
+            Bounds bounds;
+            
+            // Try Renderer first (visual bounds)
+            if (obj.TryGetComponent<Renderer>(out var renderer)) {
+                bounds = renderer.bounds;
+            }
+            // Fallback to Collider bounds
+            else if (obj.TryGetComponent<Collider>(out var collider)) {
+                bounds = collider.bounds;
+            }
+            // Check children for Renderer
+            else {
+                var childRenderer = obj.GetComponentInChildren<Renderer>();
+                if (childRenderer != null) {
+                    bounds = childRenderer.bounds;
+                }
+                else {
+                    // Ultimate fallback: just use transform position + elevated point
+                    return new[] { 
+                        obj.transform.position,
+                        obj.transform.position + Vector3.up * 3f
+                    };
+                }
+            }
+            
+            Vector3 min = bounds.min;
+            Vector3 max = bounds.max;
+            Vector3 center = bounds.center;
+            
+            // Return: origin, top 4 corners only (no bottom corners), and elevated point
+            return new[] {
+                center,                                      // Origin/center
+                new Vector3(min.x, max.y, min.z),           // Top corner 1
+                new Vector3(min.x, max.y, max.z),           // Top corner 2
+                new Vector3(max.x, max.y, min.z),           // Top corner 3
+                new Vector3(max.x, max.y, max.z),           // Top corner 4
+                center + Vector3.up * 3f                     // Elevated point
+            };
         }
     }
 }

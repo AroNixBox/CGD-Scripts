@@ -31,6 +31,7 @@ namespace Gameplay.Runtime.Player.Combat {
 
         [Tooltip("Drag of the air strike projectile.")]
         [SerializeField] float projectileDrag = 0f;
+        
 
         public ImpactResult OnImpact(Vector3 impactPosition) {
             var result = new ImpactResult {
@@ -53,6 +54,9 @@ namespace Gameplay.Runtime.Player.Combat {
             // Calculate spawn position above the impact
             var spawnPosition = impactPosition + Vector3.up * spawnHeight;
 
+            // Create transforms along the predicted flight path
+            CreateFlightPathTransforms(spawnPosition, impactPosition, result);
+
             if (spawnDelay > 0f) {
                 // Use a coroutine runner to delay spawn
                 DelayedSpawn(spawnPosition);
@@ -62,6 +66,24 @@ namespace Gameplay.Runtime.Player.Combat {
             }
 
             return result;
+        }
+
+        void CreateFlightPathTransforms(Vector3 start, Vector3 end, ImpactResult result) {
+            // Create a parent to hold all path point transforms
+            var pathParent = new GameObject("AirStrike_FlightPath");
+
+            int pathPointCount = 5;
+                
+            for (int i = 0; i <= pathPointCount; i++) {
+                float t = (float)i / pathPointCount;
+                Vector3 pointPosition = Vector3.Lerp(start, end, t);
+                
+                var pathPoint = new GameObject($"FlightPath_Point_{i}");
+                pathPoint.transform.position = pointPosition;
+                pathPoint.transform.SetParent(pathParent.transform);
+                
+                result.HitObjectOrigins.Add((pathPoint.transform, pointPosition));
+            }
         }
 
         void SpawnAirStrikeProjectile(Vector3 spawnPosition) {

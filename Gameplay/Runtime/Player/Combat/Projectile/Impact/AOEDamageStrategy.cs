@@ -29,11 +29,15 @@ namespace Gameplay.Runtime.Player.Combat {
                 HitObjectOrigins = new List<(Transform, Vector3)>()
             };
             var overlappedObjects = Physics.OverlapSphere(impactPosition, aoeRadius);
-                
+            
+            bool hitAnyDamageable = false;
+            
             foreach (var overlappedObject in overlappedObjects) {
                 // TODO
                 if (!overlappedObject.TryGetComponent(out IDamageable damageable))
                     continue;
+
+                hitAnyDamageable = true;
 
                 // TODO: This only uses the Center-Point of the overlaped object and should instead use the collisionpoint
                 var distanceObjectFromCenter = Vector3.Distance(impactPosition, overlappedObject.transform.position);
@@ -55,6 +59,12 @@ namespace Gameplay.Runtime.Player.Combat {
                 
                 result.TotalDamageDealt = ApplyDamage(damageable, intensity);
                 result.TotalKnockbackApplied = ApplyPhysics(damageable, intensity, impactPosition);
+            }
+            
+            // If no damageables were hit, add an elevated point to prevent extreme camera zoom
+            if (!hitAnyDamageable) {
+                var elevatedPoint = impactPosition + Vector3.up * 3f;
+                result.HitObjectOrigins.Add((null, elevatedPoint));
             }
 
             return result;
