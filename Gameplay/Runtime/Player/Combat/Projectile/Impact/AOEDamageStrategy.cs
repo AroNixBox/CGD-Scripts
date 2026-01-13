@@ -56,8 +56,12 @@ namespace Gameplay.Runtime.Player.Combat {
                     var topPoint = new Vector3(bounds.center.x, bounds.max.y, bounds.center.z);
                     result.HitObjectOrigins.Add((overlappedObject.transform, topPoint));
                 }
+                float dmg = ApplyDamage(damageable, intensity);
                 
-                result.TotalDamageDealt = ApplyDamage(damageable, intensity);
+                // log only if player
+                if (damageable is EntityHealth health) 
+                    if (health.TryGetComponent(out PlayerController ctrl)) 
+                        result.TotalDamageDealt = dmg;
                 result.TotalKnockbackApplied = ApplyPhysics(damageable, intensity, impactPosition);
             }
             
