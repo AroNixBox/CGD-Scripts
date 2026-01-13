@@ -4,6 +4,7 @@ using Common.Runtime._Scripts.Common.Runtime.Extensions;
 using Core.Runtime.Backend;
 using Core.Runtime.Data;
 using Core.Runtime.Service;
+using Core.Runtime.Visuals;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -86,20 +87,34 @@ namespace Core.Runtime.Authority {
             // Initialize available spawnpoints pool
             _availableSpawnPoints.Clear();
             _availableSpawnPoints.AddRange(authorityEntitiesSpawnPoints);
+            
+            var playerPrefab = characterDatabase.PlayerPrefab;
+            if (playerPrefab == null) {
+                Debug.LogError("[AuthorityManager] Player Prefab missing in CharacterDatabase!");
+                return;
+            }
 
             foreach (var userData in userDatas) {
                 // Get unique spawnpoint (recycle if all are used)
                 var spawnPoint = GetNextSpawnPoint();
                 
-                var prefabToSpawn = characterDatabase.GetPrefabForIcon(userData.UserIcon);
-                if (prefabToSpawn == null) {
-                    Debug.LogError($"[AuthorityManager] No Prefab mapping found for Sprite '{userData.UserIcon?.name}'. Check your Inspector configuration!");
-                    if(characterDatabase.Count > 0) prefabToSpawn = characterDatabase.GetPrefabAtIndex(0);
-                    else continue;
-                }
+                // Spawn Entity
+                var spawnedEntity = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
 
-                // Spawn Entity & Init
-                var spawnedEntity = Instantiate(prefabToSpawn, spawnPoint.position, spawnPoint.rotation);
+                // Hat Logic
+                var hatPrefab = characterDatabase.GetHatForIcon(userData.UserIcon);
+                if (hatPrefab != null) {
+                    var visuals = spawnedEntity.GetComponentInChildren<CharacterVisuals>();
+                    if(visuals == null || visuals.HeadBone == null) {
+                        Debug.LogError($"[AuthorityManager] CharacterVisuals or HeadBone missing on spawned entity for user {userData.Username}. Cannot attach hat.");
+                    }
+                    else {
+                        var hat = Instantiate(hatPrefab, visuals.HeadBone);
+                        hat.transform.localPosition = Vector3.zero;
+                        hat.transform.localRotation = Quaternion.identity;
+                    }
+                }
+                
                 spawnedEntity.Initialize(this, userData);
                 
                 _authorityEntities.Add(spawnedEntity);

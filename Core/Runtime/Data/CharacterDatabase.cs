@@ -10,12 +10,17 @@ namespace Core.Runtime.Data {
         [Serializable]
         public struct CharacterEntry {
             [PreviewField(Alignment = ObjectFieldAlignment.Left, Height = 50)]
-            public Sprite icon;
+            [SerializeField, Required] Sprite icon;
+            public Sprite Icon => icon;
             
-            [Required, AssetsOnly]
-            public AuthorityEntity prefab;
+            [PreviewField(Alignment = ObjectFieldAlignment.Left, Height = 50)]
+            [SerializeField, Required, AssetsOnly] GameObject hatPrefab;
+            public GameObject HatPrefab => hatPrefab;
         }
 
+        [SerializeField, Required, AssetsOnly] AuthorityEntity playerPrefab;
+        public AuthorityEntity PlayerPrefab => playerPrefab;
+        
         [SerializeField, TableList]
         List<CharacterEntry> characters;
 
@@ -23,20 +28,14 @@ namespace Core.Runtime.Data {
 
         public Sprite GetIconAtIndex(int index) {
             if (characters == null || index < 0 || index >= characters.Count) return null;
-            return characters[index].icon;
+            return characters[index].Icon;
         }
         
-        public AuthorityEntity GetPrefabForIcon(Sprite icon) {
+        public GameObject GetHatForIcon(Sprite icon) {
             foreach (var entry in characters) {
-                if (entry.icon == icon) return entry.prefab;
+                if (entry.Icon == icon) return entry.HatPrefab;
             }
             return null;
         }
-
-        public AuthorityEntity GetPrefabAtIndex(int index) {
-            if (characters == null || index < 0 || index >= characters.Count) return null;
-            return characters[index].prefab;
-        }
     }
 }
-
