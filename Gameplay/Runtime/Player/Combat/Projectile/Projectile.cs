@@ -15,6 +15,7 @@ namespace Gameplay.Runtime.Player.Combat {
         CountdownTimer _lifetimeTimer;
 
         ProjectileImpactData _impactData;
+        public ProjectileImpactData GetImpactData() => _impactData;
         
         /// <summary>
         /// Event fired when the projectile impacts. Parameters: impactPosition, wasActiveImpact (true if not fallback lifetime), impactResult
