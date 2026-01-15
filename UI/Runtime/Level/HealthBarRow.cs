@@ -36,7 +36,6 @@ namespace UI.Runtime.Level {
             var first = _spawnedHealthBars.First();
             return (first.Key, first.Value.UserData);
         }
-        
 
         public void RemoveHealthBar(IDamageable owner) {
             if (!_spawnedHealthBars.ContainsKey(owner))
@@ -44,7 +43,8 @@ namespace UI.Runtime.Level {
 
             var healthBar = _spawnedHealthBars[owner];
             _spawnedHealthBars.Remove(owner);
-            Destroy(healthBar.gameObject);
+            if(healthBar != null)
+                Destroy(healthBar.gameObject);
         }
     }
 }

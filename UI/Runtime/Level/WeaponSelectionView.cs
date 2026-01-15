@@ -66,39 +66,47 @@ namespace UI.Runtime.Level {
         void ScrollToElement(RectTransform target) {
             Canvas.ForceUpdateCanvases();
         
+            var content = weaponCategoriesParent;
             var viewport = weaponSelectionScroll.viewport;
-            var viewportRect = viewport.rect;
             
-            // Borders
+            // Check if target is already visible
             var targetViewportPos = viewport.InverseTransformPoint(target.position);
             var targetRect = target.rect;
+            var viewportRect = viewport.rect;
+            
             var targetLeftEdge = targetViewportPos.x + targetRect.xMin;
             var targetRightEdge = targetViewportPos.x + targetRect.xMax;
-        
-            // Viewport-Edges
             var viewportLeftEdge = viewportRect.xMin;
             var viewportRightEdge = viewportRect.xMax;
-        
-            float offset;
-
-            // Target is:
-            if (targetLeftEdge < viewportLeftEdge) {
-                // Left out of bounds
-                offset = viewportLeftEdge - targetLeftEdge;
-            }
-            else if (targetRightEdge > viewportRightEdge) {
-                // Right out of bounds
-                offset = -(targetRightEdge - viewportRightEdge);
-            }
-            else {
-                // Target is already fully visible
+            
+            // Element is already fully visible, don't scroll
+            if (targetLeftEdge >= viewportLeftEdge && targetRightEdge <= viewportRightEdge) {
                 return;
             }
-
-            weaponCategoriesParent.localPosition = new Vector2(
-                weaponCategoriesParent.localPosition.x + offset,
-                weaponCategoriesParent.localPosition.y
-            );
+            
+            // Calculate normalized position (0 = left, 1 = right)
+            var contentWidth = content.rect.width;
+            var viewportWidth = viewport.rect.width;
+            var scrollableWidth = contentWidth - viewportWidth;
+            
+            // If content fits in viewport, no scrolling needed
+            if (scrollableWidth <= 0) {
+                return;
+            }
+            
+            // Get target position in content space
+            var targetPosInContent = target.localPosition.x;
+            var targetWidth = target.rect.width;
+            
+            // Calculate where to scroll to center the target
+            var desiredContentPos = -targetPosInContent + (viewportWidth - targetWidth) * 0.5f;
+            
+            // Clamp to valid scroll range
+            desiredContentPos = Mathf.Clamp(desiredContentPos, -scrollableWidth, 0);
+            
+            // Apply normalized position
+            var normalizedPos = Mathf.Abs(desiredContentPos) / scrollableWidth;
+            weaponSelectionScroll.horizontalNormalizedPosition = normalizedPos;
         }
 
 
