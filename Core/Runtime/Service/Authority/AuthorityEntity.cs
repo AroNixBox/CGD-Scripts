@@ -47,20 +47,17 @@ namespace Core.Runtime.Authority {
             _authorityManager.GiveNextEntityAuthority();
         }
 
-        // TODO: Not optimal, race condition.. Find another way of doing it...
-        // Should be done via Health when entity dies and as fallback the unregister
-        void Unregister() {
+        /// <summary>
+        /// Unregisters this entity from the authority system.
+        /// Call this when the entity dies (e.g., from EntityHealth).
+        /// </summary>
+        public void Unregister() {
             if (_authorityManager == null) {
                 Debug.LogError("Auth Manager is null");
                 return;
             }
             
             _authorityManager.UnregisterEntity(this);
-        }
-
-        // Hmmm, not sure bot that...
-        void OnDisable() {
-            Unregister();
         }
     }
 }

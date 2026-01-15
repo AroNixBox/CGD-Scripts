@@ -1,4 +1,5 @@
 ﻿using System;
+using Core.Runtime.Authority;
 using Gameplay.Runtime.Interfaces;
 using UnityEngine;
 
@@ -30,7 +31,11 @@ namespace Gameplay.Runtime.Player {
         }
 
         void Destruct() {
-            // TODO: Somehow inform Entity System that we are being destroyed
+            // Unregister from authority system before destroying
+            if (TryGetComponent(out AuthorityEntity authorityEntity)) {
+                authorityEntity.Unregister();
+            }
+            
             gameObject.SetActive(false);
         }
     }

@@ -12,20 +12,18 @@ namespace UI.Runtime {
         public event Action OnStartGame = delegate { };
 
         void OnEnable() {
-            InitializeHubEntries().Forget();
-            view.OnUserAddPressed += AddPressedUser;
+            view.OnUserAddPressed += OpenAddUserPanel;
             view.OnStartGamePressed += StartGame;
         }
         void OnDisable() {
-            view.DespawnHubEntries();
-            view.OnUserAddPressed -= AddPressedUser;
+            view.OnUserAddPressed -= OpenAddUserPanel;
             view.OnStartGamePressed -= StartGame;
         }
 
-        void AddPressedUser() {
+        void OpenAddUserPanel() {
             OnAddUser.Invoke();
             
-            // Deinitialize Self
+            // Erase all Entries and hide self
             view.DespawnHubEntries();
             view.Hide();
         }
@@ -33,23 +31,22 @@ namespace UI.Runtime {
         void StartGame() {
             OnStartGame.Invoke();
             
-            // Deinitialize Self
+            // Erase all Entries and hide self
             view.DespawnHubEntries();
             view.Hide();
         }
 
-        async UniTask InitializeHubEntries() {
-            GameManager gameManager = null;
-            await UniTask.WaitUntil(() => ServiceLocator.TryGet(out gameManager));
+        public void Show() {
+            if (!ServiceLocator.TryGet(out GameManager gameManager)) {
+                Debug.LogError("Game Manager is null, cant load Users");
+                return;
+            }
 
             var users = gameManager.GetUserDatasCopy();
             foreach (var user in users) {
                 view.SpawnHubEntry(user);
             }
-        }
-
-        public void Show() {
-            InitializeHubEntries().Forget();
+            
             view.Show();
         }
     }

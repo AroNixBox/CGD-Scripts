@@ -15,12 +15,18 @@ namespace Core.Runtime {
     public class GameManager : MonoBehaviour {
         [SerializeField] bool testUsers;
         [SerializeField, Required, ShowIf("@testUsers")] List<UserData> testUserData;
-        readonly List<UserData> _userDatas = new();
+        List<UserData> _userDatas = new();
 
+        // TODO: Events haben weniger mit Game zu tun, sondern sind generelle AWake, onenable, start auch für Manager die dont destroy on load sind
+        // Authority Manager muss dem Game Manage rmitteilen wer sich unregistriert mäßig...
+        
+        // Warum funktioniert Main Menu nicht, zwei zusätzliche Entries erscheinen und user sind dupliziert, warum?
+        // Restart
         // Events
         public event EventHandler<PreGameInitEventArgs> OnPreGameInit = delegate { };
         public event EventHandler<GameInitEventArgs> OnGameInit = delegate { };
         public event Action OnGameStart = delegate { };
+        
 
         void Awake() { 
             // TESTING PURPOSE
@@ -39,6 +45,14 @@ namespace Core.Runtime {
         void OnDisable() => SceneManager.sceneLoaded -= OnSceneLoaded;
         
         public void AddUserData(UserData userData) => _userDatas.Add(userData);
+        public void RemoveUserData(UserData userData) {
+            if (!_userDatas.Contains(userData)) {
+                Debug.LogError("Tried Removing a User that wasnt even in UserData of Game Manager..?");
+                return;
+            }
+            _userDatas.Remove(userData);
+        }
+
         public List<UserData> GetUserDatasCopy() => new(_userDatas);
         
         void OnSceneLoaded(Scene scene, LoadSceneMode mode) => InitializeGameAsync().Forget();

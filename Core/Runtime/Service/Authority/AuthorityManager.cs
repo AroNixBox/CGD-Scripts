@@ -28,8 +28,9 @@ namespace Core.Runtime.Authority {
         [SerializeField, Tooltip("If true, the turn will automatically end when the timer runs out")]
         bool autoEndTurnOnTimeout = true;
         
-        readonly List<AuthorityEntity> _authorityEntities = new();
-        readonly List<Transform> _availableSpawnPoints = new();
+        List<AuthorityEntity> _authorityEntities = new();
+        Dictionary<AuthorityEntity, UserData> _authEntityUserMapping = new();
+        List<Transform> _availableSpawnPoints = new();
         
         float _currentTurnTime;
         bool _isTimerRunning;
@@ -71,12 +72,13 @@ namespace Core.Runtime.Authority {
             gameManager.OnGameStart += StartFlow;
         }
 
+
         void OnDisable() {
             if (!ServiceLocator.TryGet(out GameManager gameManager))
                 return;
 
-            gameManager.OnGameInit += HandleInit;
-            gameManager.OnGameStart += StartFlow;
+            gameManager.OnGameInit -= HandleInit;
+            gameManager.OnGameStart -= StartFlow;
         }
         
         void HandleInit(object sender, GameManager.GameInitEventArgs args) {
@@ -101,6 +103,7 @@ namespace Core.Runtime.Authority {
                 // Spawn Entity
                 var spawnedEntity = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
 
+                // TODO: Needs to sit outside of authority manager xd
                 // Hat Logic
                 var hatPrefab = characterDatabase.GetHatForIcon(userData.UserIcon);
                 if (hatPrefab != null) {
@@ -118,6 +121,7 @@ namespace Core.Runtime.Authority {
                 spawnedEntity.Initialize(this, userData);
                 
                 _authorityEntities.Add(spawnedEntity);
+                _authEntityUserMapping.Add(spawnedEntity, userData);
                 OnEntitySpawned.Invoke(spawnedEntity);
                 
                 // Wait before spawning next entity
@@ -197,7 +201,15 @@ namespace Core.Runtime.Authority {
         /// </summary>
         public bool IsTimerRunning => _isTimerRunning;
         
-        void OnDestroy() => ServiceLocator.Unregister<AuthorityManager>();
+        void OnDestroy() {
+            // Only clear internal lists - do NOT remove UserDatas from GameManager here!
+            // UserDatas should persist for restart. They are only removed when an entity
+            // actually dies (via EntityHealth → AuthorityEntity.Unregister → UnregisterEntity)
+            _authorityEntities.Clear();
+            _authEntityUserMapping.Clear();
+            
+            ServiceLocator.Unregister<AuthorityManager>();
+        }
         
         /// <summary>
         /// Advances to the next player in the list.
@@ -269,11 +281,18 @@ namespace Core.Runtime.Authority {
             var hadAuthority = HasAuthority(authorityEntity);
     
             _authorityEntities.Remove(authorityEntity);
+            _authEntityUserMapping.Remove(authorityEntity);
+            
             AdjustNextAuthorityIndex(removedIndex);
             HandleGameEndCondition();
             HandleAuthorityTransfer(hadAuthority);
             OnEntityDied.Invoke(authorityEntity);
+            
+            // NOTE: UserData is intentionally NOT removed from GameManager here!
+            // Users should persist for restart. Only remove UserData when player
+            // leaves the game entirely (e.g., back to main menu).
         }
+        
         bool ValidateEntityForUnregister(AuthorityEntity authorityEntity) {
             if (authorityEntity == null) {
                 Debug.LogError("AuthorityEntity is null.");

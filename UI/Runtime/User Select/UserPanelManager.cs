@@ -24,8 +24,12 @@ namespace UI.Runtime {
 
         void Start() {
             ShowHub();
+            
             creationController.Hide();
             loadController.Hide();
+
+            Cursor.lockState = CursorLockMode.Confined;
+            Cursor.visible = true;
         }
 
         void ShowCreation() => creationController.Show();
