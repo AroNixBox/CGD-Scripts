@@ -24,6 +24,10 @@ namespace Gameplay.Runtime.Player.Animation {
             return stateInfo.normalizedTime >= endThreshold;
         }
 
+        public void SetRootMotion(bool enabled) {
+            animator.applyRootMotion = enabled;
+        }
+
         public bool IsInTransition(int layer) {
             return animator.IsInTransition(layer);
         }

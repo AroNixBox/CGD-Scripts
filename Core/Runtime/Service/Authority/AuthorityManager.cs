@@ -328,5 +328,12 @@ namespace Core.Runtime.Authority {
         }
 
         public int EntityCount => _authorityEntities.Count;
+        
+        /// <summary>
+        /// Returns true if only one entity remains in the authority system AND it's the given entity.
+        /// </summary>
+        public bool IsLastEntity(AuthorityEntity authorityEntity) {
+            return _authorityEntities.Count == 1 && _authorityEntities.Contains(authorityEntity);
+        }
     }
 }

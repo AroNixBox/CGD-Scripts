@@ -1,9 +1,11 @@
 ﻿using System;
 using Core.Runtime.Service.Input;
 using Extensions.FSM;
+using Gameplay.Runtime.Player.Animation;
 using Gameplay.Runtime.Player.Combat;
 using Gameplay.Runtime.Player.States.GroundedSubStates;
 using UnityEngine;
+using AnimationState = Gameplay.Runtime.Player.States.GroundedSubStates.AnimationState;
 
 namespace Gameplay.Runtime.Player.States {
     public class GroundedState : ISubStateMachine {
@@ -26,7 +28,8 @@ namespace Gameplay.Runtime.Player.States {
             _controller = controller;
             
             _stateMachine = new StateMachine();
-            IState awaitingAuthorityState = new AwaitingAuthorityState(controller);
+            var awaitingAuthorityState = new AwaitingAuthorityState(controller);
+            var winState = new AnimationState(_controller, AnimationParameters.Win, true);
             var projectileWatchState = new ProjectileWatchState(controller, () => _pendingProjectile);
             _combatStanceState = new CombatStanceState(controller, projectile => _pendingProjectile = projectile);
             _locomotionState = new LocomotionState(controller);
@@ -38,9 +41,12 @@ namespace Gameplay.Runtime.Player.States {
             At(awaitingAuthorityState, _locomotionState, HasAuthority);
             At(_locomotionState, awaitingAuthorityState, () => !HasAuthority());
             
+            Any(winState, () => _controller.AuthorityEntity.IsLastPlayer());
+            
             return;
             
             void At(IState from, IState to, Func<bool> condition) => _stateMachine.AddTransition(from, to, condition);
+            void Any(IState to, Func<bool> condition) => _stateMachine.AddAnyTransition(to, condition);
         }
         
         bool HasAuthority() => _controller.AuthorityEntity.HasAuthority();

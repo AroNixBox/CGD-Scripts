@@ -1,7 +1,10 @@
 using System;
 using Common.Runtime.Extensions;
+using Core.Runtime;
 using Core.Runtime.Authority;
+using Core.Runtime.Service;
 using Core.Runtime.Service.Input;
+using Cysharp.Threading.Tasks;
 using Extensions.FSM;
 using Gameplay.Runtime.Player.Animation;
 using Gameplay.Runtime.Player.Camera;
@@ -10,6 +13,7 @@ using Gameplay.Runtime.Player.States;
 using Gameplay.Runtime.Player.States.GroundedSubStates;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using AnimationState = Gameplay.Runtime.Player.States.GroundedSubStates.AnimationState;
 
 namespace Gameplay.Runtime.Player {
     /// <summary>
@@ -96,13 +100,21 @@ namespace Gameplay.Runtime.Player {
         public event Action<float, float> OnMovementBudgetChanged = delegate { }; // currentTime, maxTime
 
         #endregion
-        void Awake() {
+        async void Awake() {
             _tr = transform;
             _mover = GetComponent<PlayerMover>();
             AuthorityEntity = GetComponent<AuthorityEntity>();
             _movementBudget = new MovementBudget(maxMovementTimePerTurn);
             
-            SetupStateMachine();
+            
+            // Wait for GameManager and subscribe to OnGameStart
+            if (!ServiceLocator.TryGet(out GameManager gameManager)) {
+                await UniTask.WaitUntil(() => ServiceLocator.TryGet(out gameManager));
+                if (gameManager == null) return;
+            }
+            
+            gameManager.OnGameStart += SetupStateMachine;
+            gameManager.OnGameStart += InputReader.EnablePlayerActions;
         }
 
         void SetupStateMachine() {
@@ -129,6 +141,7 @@ namespace Gameplay.Runtime.Player {
             At(landing, grounded, () => landing.HasLanded());
             At(landing, falling, () => !_mover.IsGrounded());
             
+            
             _stateMachine.SetState(falling);
 
             return;
@@ -146,10 +159,16 @@ namespace Gameplay.Runtime.Player {
         // TODO: Use for Animator later on
         public Vector3 GetMovementVelocity() => _savedMovementVelocity; // Inputdirection * MovementSpeed
         public Vector3 GetVelocity() => _savedVelocity; // Includes Gravity & Momentum & Movement
-        void Start() {
-            InputReader.EnablePlayerActions();
+        
+        void OnDestroy() {
+            if (ServiceLocator.TryGet(out GameManager gameManager)) {
+                gameManager.OnGameStart -= SetupStateMachine;
+                gameManager.OnGameStart -= InputReader.EnablePlayerActions;
+            }
         }
         void Update() {
+            if (_stateMachine == null) return; // Not initialized yet
+            
             _stateMachine.Tick(Time.deltaTime);
             
             // Update movement budget
@@ -205,6 +224,8 @@ namespace Gameplay.Runtime.Player {
             ? _tr.localToWorldMatrix * _momentum 
             : _momentum;
         void FixedUpdate() {
+            if (_stateMachine == null) return; // Not initialized yet
+            
             _mover.CheckForGround();
             HandleMomentum();
             

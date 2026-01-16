@@ -12,13 +12,15 @@ namespace Gameplay.Runtime.Player.Animation {
         public static readonly int Fall = Animator.StringToHash("Fall");
         public static readonly int Land = Animator.StringToHash("Land");
         public static readonly int TPose = Animator.StringToHash("T-Pose");
+        public static readonly int Win = Animator.StringToHash("Win");
         
         static readonly Dictionary<int, int> AnimationLayers = new (){
             {Locomotion, 0}, 
             {Fall, 0},
             {Land, 0},
             {CastSpell, 0},
-            {TPose, 0}
+            {TPose, 0},
+            {Win, 0}
         };
         public static int GetAnimationLayer(int animationHash) {
             return AnimationLayers.GetValueOrDefault(animationHash, 0);
@@ -31,7 +33,8 @@ namespace Gameplay.Runtime.Player.Animation {
             {Fall, 0.25f},
             {Land, 0.25f},
             {CastSpell, 0.125f},
-            {TPose, 0f}
+            {TPose, 0f},
+            {Win, .25f},
         };
         
         public static float GetAnimationDuration(int animationHash) {

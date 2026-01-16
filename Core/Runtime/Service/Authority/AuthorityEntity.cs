@@ -47,6 +47,15 @@ namespace Core.Runtime.Authority {
             _authorityManager.GiveNextEntityAuthority();
         }
 
+        public bool IsLastPlayer() {
+            if (_authorityManager == null) {
+                Debug.LogError("AuthorityEntity not initialized properly");
+                return false;
+            }
+            
+            return _authorityManager.IsLastEntity(this);
+        }
+        
         /// <summary>
         /// Unregisters this entity from the authority system.
         /// Call this when the entity dies (e.g., from EntityHealth).

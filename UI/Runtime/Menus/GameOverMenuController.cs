@@ -16,8 +16,6 @@ namespace UI.Runtime.Menus {
                 onMenu: () => SceneManager.LoadScene("Scenes/User Hub")
                 );
             
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
             view.Hide();
         }
 
