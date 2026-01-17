@@ -97,7 +97,23 @@ namespace Gameplay.Runtime.Player.Combat {
                 : ImpactData.FromPosition(transform.position);
             
             var impactResult = impactStrategy.OnImpact(impactData);
-            
+
+            var impactRemainer = _impactData.GetImpactProjectileRemainder();
+            if (impactRemainer != null) {
+                Vector3 spawnPosition = impactData.Position;
+                Quaternion spawnRotation = Quaternion.FromToRotation(Vector3.back, impactData.Normal);
+                Transform parent = collision.collider.transform;
+
+                //wrongly attached to player root which won't rotate
+                if (parent.name == "Player(Clone)") {
+                    Transform modelRoot = parent.Find("Model Root");
+                    if (modelRoot != null) {
+                        parent = modelRoot;
+                    }
+                }
+                Instantiate(impactRemainer, spawnPosition, spawnRotation, parent);
+            }
+
             ApplyEffects();
             
             // Fire impact event before cleanup
