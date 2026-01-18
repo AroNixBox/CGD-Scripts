@@ -1,15 +1,18 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using Extensions.FSM;
 using Gameplay.Runtime.Player.Camera;
 using Gameplay.Runtime.Player.Combat;
-using Sirenix.Utilities;
 using UnityEngine;
+using UnityEngine.Pool;
 
 namespace Gameplay.Runtime.Player.States.GroundedSubStates {
     public class ProjectileWatchState : IState {
+        // Shared static pool for all players to avoid N pools for N players and share resources
+        static ObjectPool<Transform> _sharedCameraFocusPool;
+        static Transform _sharedPoolRoot;
+
         readonly PlayerController _controller;
         readonly PlayerCameraControls _cameraControls;
         readonly Func<Projectile> _getProjectile;
@@ -22,6 +25,34 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             _controller = controller;
             _cameraControls = controller.PlayerCameraControls;
             _getProjectile = getProjectile;
+        }
+
+        static ObjectPool<Transform> GetFocusPool() {
+            // Re-initialize if the root object was destroyed (e.g. scene load)
+            if (_sharedPoolRoot != null) return _sharedCameraFocusPool;
+            
+            // New Pool
+            _sharedPoolRoot = new GameObject("Shared Bullet Camera Focus Pool").transform;
+            _sharedCameraFocusPool = new ObjectPool<Transform>(
+                createFunc: () => {
+                    var tr = new GameObject("FocusPoint").transform;
+                    tr.SetParent(_sharedPoolRoot);
+                    return tr;
+                },
+                actionOnGet: e => {
+                    if (e != null) e.gameObject.SetActive(true);
+                },
+                actionOnRelease: e => {
+                    if (e != null) e.gameObject.SetActive(false);
+                },
+                actionOnDestroy: e => {
+                    if (e != null) UnityEngine.Object.Destroy(e.gameObject);
+                },
+                collectionCheck: true,
+                defaultCapacity: 12,
+                maxSize: 35
+            );
+            return _sharedCameraFocusPool;
         }
 
         public void OnEnter() {
@@ -40,34 +71,38 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         /// We could try to zoom out and capture all POI's
         /// </summary>
         async UniTaskVoid HandleProjectileImpact(Vector3 impactPosition, ImpactResult impactResult) {
-            var projectileImpactPosDummy = new GameObject("Projectile Impact Position") {
-               transform = {
-                   position = impactPosition
-               }
-            };
-           
-            // TODO:
-            // Should be done in each strategy to also allow following moving objects and not copying
-            // already copies
+            var projectileImpactPosDummy = GetObjectFromPool(impactPosition, "Projectile Impact Transform");
             
             // A Damageable can be destroyed, and we still want to observer the point where the damageable was :)
             // Create list with impact position + all POIs
-            var hitObjectOriginDummies = new List<Transform> { projectileImpactPosDummy.transform };
-            foreach (var hitObjectOrigin in impactResult.HitObjectOrigins) {
-                var hitObjectDummyTransform = new GameObject("Hit Object Transform") {
-                    transform = {
-                        position = hitObjectOrigin
-                    }
-                }; 
-                hitObjectOriginDummies.Add(hitObjectDummyTransform.transform);
+            var impactCameraFocusPoints = new List<Transform>();
+            impactCameraFocusPoints.Add(projectileImpactPosDummy);
+
+            for (var i = 0; i < impactResult.HitObjectOrigins.Count; i++) {
+                var cameraFocusPoint = GetObjectFromPool(impactResult.HitObjectOrigins[i], $"Hit Object Transform {i}");
+                impactCameraFocusPoints.Add(cameraFocusPoint);
             }
-            // TODO: Add all targets that we hit to the target group
-            _cameraControls.SetBulletCameraTargets(hitObjectOriginDummies);
+
+            _cameraControls.SetBulletCameraTargets(impactCameraFocusPoints);
             
             // Wait for post-impact delay
             await UniTask.WaitForSeconds(_controller.PostImpactDelay * 3);
             _cameraControls.ResetBulletCamera();
+            
+            // Release objects back to the pool
+            var pool = GetFocusPool();
+            foreach (var point in impactCameraFocusPoints) {
+                if(point != null) pool.Release(point);
+            }
+            
             CompleteState();
+        }
+
+        Transform GetObjectFromPool(Vector3 newPosition, string objectName) {
+            var poolTransform = GetFocusPool().Get();
+            poolTransform.name = objectName;
+            poolTransform.position = newPosition;
+            return poolTransform;
         }
 
         void CompleteState() {
@@ -84,4 +119,3 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
         public Color GizmoState() => Color.cyan;
     }
 }
-
