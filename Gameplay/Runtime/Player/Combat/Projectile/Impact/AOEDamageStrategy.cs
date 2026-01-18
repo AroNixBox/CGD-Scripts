@@ -26,7 +26,7 @@ namespace Gameplay.Runtime.Player.Combat {
         // [field: SerializeField] public float DistanceMultiplierValue { get; private set; }
         public ImpactResult OnImpact(Vector3 impactPosition) {
             var result = new ImpactResult {
-                HitObjectOrigins = new List<(Transform, Vector3)>()
+                HitObjectOrigins = new List<Vector3>()
             };
             var overlappedObjects = Physics.OverlapSphere(impactPosition, aoeRadius);
             
@@ -46,7 +46,7 @@ namespace Gameplay.Runtime.Player.Combat {
                 var distanceScore = Mathf.Clamp(distanceObjectFromCenter / aoeRadius, 0, 1); 
                 var intensity = damageDropoffCurve.Evaluate(distanceScore);
 
-                result.HitObjectOrigins.Add((overlappedObject.transform, overlappedObject.transform.position));
+                result.HitObjectOrigins.Add(overlappedObject.transform.position);
 
                 var allColliders = overlappedObject.transform.GetComponentsInChildren<Collider>();
                 if (allColliders.Length > 0) {
@@ -54,7 +54,7 @@ namespace Gameplay.Runtime.Player.Combat {
                     foreach (var col in allColliders) bounds.Encapsulate(col.bounds);
                     
                     var topPoint = new Vector3(bounds.center.x, bounds.max.y, bounds.center.z);
-                    result.HitObjectOrigins.Add((overlappedObject.transform, topPoint));
+                    result.HitObjectOrigins.Add(topPoint);
                 }
                 float dmg = ApplyDamage(damageable, intensity);
                 
@@ -62,13 +62,14 @@ namespace Gameplay.Runtime.Player.Combat {
                 if (damageable is EntityHealth health) 
                     if (health.TryGetComponent(out PlayerController ctrl)) 
                         result.TotalDamageDealt = dmg;
+                
                 result.TotalKnockbackApplied = ApplyPhysics(damageable, intensity, impactPosition);
             }
             
             // If no damageables were hit, add an elevated point to prevent extreme camera zoom
             if (!hitAnyDamageable) {
                 var elevatedPoint = impactPosition + Vector3.up * 3f;
-                result.HitObjectOrigins.Add((null, elevatedPoint));
+                result.HitObjectOrigins.Add(elevatedPoint);
             }
 
             return result;

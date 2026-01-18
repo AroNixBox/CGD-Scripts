@@ -20,7 +20,7 @@ namespace Gameplay.Runtime.Player.Combat {
         
         public ImpactResult OnImpact(ImpactData impactData) {
             var result = new ImpactResult {
-                HitObjectOrigins = new List<(Transform, Vector3)>()
+                HitObjectOrigins = new List<Vector3>()
             };
             
             if (hazardPrefab == null) {
@@ -35,14 +35,14 @@ namespace Gameplay.Runtime.Player.Combat {
             
             // Add hazard bounds points to hit origins (origin, top corners, elevated)
             foreach (var point in GetBoundsPoints(hazard)) {
-                result.HitObjectOrigins.Add((hazard.transform, point));
+                result.HitObjectOrigins.Add(point);
             }
 
             if (additionalHazards != null) {
                 foreach (var h in additionalHazards) {
                     var additionalHazard = UnityEngine.Object.Instantiate(h, spawnPosition, spawnRotation);
                     foreach (var point in GetBoundsPoints(additionalHazard)) {
-                        result.HitObjectOrigins.Add((additionalHazard.transform, point));
+                        result.HitObjectOrigins.Add(point);
                     }
                 }
             }

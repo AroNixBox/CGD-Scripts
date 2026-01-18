@@ -4,23 +4,30 @@ using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Combat {
     /// <summary>
-    /// Impact strategy that spawns a separate projectile from above the impact position,
-    /// simulating an air strike effect.
+    /// Impact strategy that spawns a plane flying over the impact position,
+    /// which drops a projectile when directly above the target.
     /// </summary>
     [Serializable]
     public class AirStrikeStrategy : IImpactStrategy {
-        [Header("Air Strike Configuration")]
-        [Tooltip("Height above impact position where the air strike projectile spawns.")]
-        [SerializeField] float spawnHeight = 20f;
+        [Header("Plane Configuration")]
+        [Tooltip("Prefab for the plane that flies over and drops the projectile.")]
+        [SerializeField] GameObject planePrefab;
 
-        [Tooltip("Prefab for the projectile that will be dropped from above.")]
+        [Tooltip("Speed at which the plane flies.")]
+        [SerializeField] float planeSpeed = 30f;
+
+        [Tooltip("Height at which the plane flies above the impact position.")]
+        [SerializeField] float flyHeight = 20f;
+
+        [Tooltip("Distance from the drop point where the plane spawns and despawns.")]
+        [SerializeField] float planeFlightDistance = 50f;
+
+        [Header("Projectile Configuration")]
+        [Tooltip("Prefab for the projectile that will be dropped from the plane.")]
         [SerializeField] Projectile airStrikeProjectilePrefab;
 
         [Tooltip("Impact data for the spawned air strike projectile. Defines behavior on impact.")]
         [SerializeField] ProjectileImpactData airStrikeImpactData;
-
-        [Tooltip("Optional delay before spawning the air strike projectile.")]
-        [SerializeField] float spawnDelay = 0f;
 
         [Header("Projectile Physics")]
         [Tooltip("Initial downward velocity of the air strike projectile.")]
@@ -30,16 +37,20 @@ namespace Gameplay.Runtime.Player.Combat {
         [SerializeField] float projectileMass = 1f;
 
         [Tooltip("Drag of the air strike projectile.")]
-        [SerializeField] float projectileDrag = 0f;
-        
+        [SerializeField] float projectileDrag;
 
         public ImpactResult OnImpact(Vector3 impactPosition) {
             var result = new ImpactResult {
-                HitObjectOrigins = new List<(Transform, Vector3)>(),
+                HitObjectOrigins = new List<Vector3>(),
                 TotalDamageDealt = 0,
                 TotalKnockbackApplied = 0,
                 TargetsHit = 0
             };
+
+            if (planePrefab == null) {
+                Debug.LogWarning("AirStrikeStrategy: No plane prefab assigned!");
+                return result;
+            }
 
             if (airStrikeProjectilePrefab == null) {
                 Debug.LogWarning("AirStrikeStrategy: No projectile prefab assigned!");
@@ -51,47 +62,48 @@ namespace Gameplay.Runtime.Player.Combat {
                 return result;
             }
 
-            // Calculate spawn position above the impact
-            var spawnPosition = impactPosition + Vector3.up * spawnHeight;
+            // Calculate the drop position (directly above impact)
+            var dropPosition = impactPosition + Vector3.up * flyHeight;
 
-            // Create transforms along the predicted flight path
-            CreateFlightPathTransforms(spawnPosition, impactPosition, result);
+            // Spawn plane and let it fly over
+            SpawnPlane(dropPosition);
 
-            if (spawnDelay > 0f) {
-                // Use a coroutine runner to delay spawn
-                DelayedSpawn(spawnPosition);
-            }
-            else {
-                SpawnAirStrikeProjectile(spawnPosition);
-            }
+            var extendedImpactPosition = impactPosition + Vector3.down * 3;
+            result.HitObjectOrigins.Add(extendedImpactPosition);
+            result.HitObjectOrigins.Add(dropPosition);
 
             return result;
         }
+        
+        /// <returns>The Transforms that should be observed by the Camera</returns>
+        void SpawnPlane(Vector3 dropPosition) {
+            // Plane starts from one side and flies to the other
+            var startPosition = dropPosition + Vector3.forward * planeFlightDistance;
+            var endPosition = dropPosition - Vector3.forward * planeFlightDistance;
 
-        void CreateFlightPathTransforms(Vector3 start, Vector3 end, ImpactResult result) {
-            // Create a parent to hold all path point transforms
-            var pathParent = new GameObject("AirStrike_FlightPath");
+            // Spawn the plane
+            var planeInstance = UnityEngine.Object.Instantiate(
+                planePrefab,
+                startPosition,
+                Quaternion.LookRotation(-Vector3.forward) // Look towards flight direction
+            );
 
-            int pathPointCount = 5;
-                
-            for (int i = 0; i <= pathPointCount; i++) {
-                float t = (float)i / pathPointCount;
-                Vector3 pointPosition = Vector3.Lerp(start, end, t);
-                
-                var pathPoint = new GameObject($"FlightPath_Point_{i}");
-                pathPoint.transform.position = pointPosition;
-                pathPoint.transform.SetParent(pathParent.transform);
-                
-                result.HitObjectOrigins.Add((pathPoint.transform, pointPosition));
-            }
+            // Add the flight controller component
+            var flightController = planeInstance.AddComponent<AirStrikePlaneController>();
+            flightController.Initialize(
+                this,
+                dropPosition,
+                endPosition,
+                planeSpeed
+            );
         }
 
-        void SpawnAirStrikeProjectile(Vector3 spawnPosition) {
+        internal void SpawnProjectile(Vector3 spawnPosition) {
             // Instantiate the air strike projectile
             var projectileInstance = UnityEngine.Object.Instantiate(
                 airStrikeProjectilePrefab,
                 spawnPosition,
-                Quaternion.LookRotation(Vector3.down)
+                Quaternion.identity
             );
 
             // Initialize the projectile to fall downward
@@ -103,39 +115,53 @@ namespace Gameplay.Runtime.Player.Combat {
                 airStrikeImpactData
             );
         }
-
-        void DelayedSpawn(Vector3 spawnPosition) {
-            // Create a temporary GameObject to handle the delayed spawn via coroutine
-            var delayHelper = new GameObject("AirStrike_DelayHelper");
-            var delayComponent = delayHelper.AddComponent<AirStrikeDelayHelper>();
-            delayComponent.Initialize(this, spawnPosition, spawnDelay);
-        }
-
-        // Called by delay helper to spawn after delay
-        internal void ExecuteDelayedSpawn(Vector3 spawnPosition) {
-            SpawnAirStrikeProjectile(spawnPosition);
-        }
     }
 
     /// <summary>
-    /// Helper component to handle delayed spawning of air strike projectiles.
+    /// Controller component for the air strike plane that flies over and drops a projectile.
     /// </summary>
-    internal class AirStrikeDelayHelper : MonoBehaviour {
+    class AirStrikePlaneController : MonoBehaviour {
         AirStrikeStrategy _strategy;
-        Vector3 _spawnPosition;
-        float _delay;
+        Vector3 _dropPosition;
+        Vector3 _endPosition;
+        float _speed;
+        bool _hasDropped;
 
-        public void Initialize(AirStrikeStrategy strategy, Vector3 spawnPosition, float delay) {
+        public void Initialize(
+            AirStrikeStrategy strategy,
+            Vector3 dropPosition,
+            Vector3 endPosition,
+            float speed
+        ) {
             _strategy = strategy;
-            _spawnPosition = spawnPosition;
-            _delay = delay;
-            StartCoroutine(DelayedSpawnCoroutine());
+            _dropPosition = dropPosition;
+            _endPosition = endPosition;
+            _speed = speed;
+            _hasDropped = false;
         }
 
-        System.Collections.IEnumerator DelayedSpawnCoroutine() {
-            yield return new WaitForSeconds(_delay);
-            _strategy.ExecuteDelayedSpawn(_spawnPosition);
-            Destroy(gameObject);
+        void Update() {
+            // Move plane towards end position
+            var direction = (_endPosition - transform.position).normalized;
+            transform.position += _speed * Time.deltaTime * direction;
+
+            // Check if plane is over drop position (within small threshold on XZ plane)
+            var horizontalDistanceToDrop = Vector3.Distance(
+                new Vector3(transform.position.x, 0, transform.position.z),
+                new Vector3(_dropPosition.x, 0, _dropPosition.z)
+            );
+
+            // Drop projectile when directly above target
+            if (!_hasDropped && horizontalDistanceToDrop < _speed * Time.deltaTime * 2f) {
+                _hasDropped = true;
+                _strategy.SpawnProjectile(transform.position);
+            }
+
+            // Check if reached end position
+            var distanceToEnd = Vector3.Distance(transform.position, _endPosition);
+            if (distanceToEnd < _speed * Time.deltaTime * 2f) {
+                Destroy(gameObject);
+            }
         }
     }
 }

@@ -46,17 +46,17 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
                }
             };
            
+            // TODO:
+            // Should be done in each strategy to also allow following moving objects and not copying
+            // already copies
+            
             // A Damageable can be destroyed, and we still want to observer the point where the damageable was :)
             // Create list with impact position + all POIs
             var hitObjectOriginDummies = new List<Transform> { projectileImpactPosDummy.transform };
-            foreach (var hitObjectOriginPos in impactResult.HitObjectOrigins) {
-                if (hitObjectOriginPos.obj != null) {
-                    hitObjectOriginDummies.Add(hitObjectOriginPos.obj);
-                }
-                
+            foreach (var hitObjectOrigin in impactResult.HitObjectOrigins) {
                 var hitObjectDummyTransform = new GameObject("Hit Object Transform") {
                     transform = {
-                        position = hitObjectOriginPos.origin
+                        position = hitObjectOrigin
                     }
                 }; 
                 hitObjectOriginDummies.Add(hitObjectDummyTransform.transform);
