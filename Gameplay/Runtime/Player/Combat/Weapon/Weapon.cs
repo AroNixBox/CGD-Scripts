@@ -8,12 +8,11 @@ namespace Gameplay.Runtime.Player.Combat {
     public class Weapon : MonoBehaviour {
         [Tooltip("Bullet Spawn Point")]
         [SerializeField, Required] public Transform muzzlePoint;
+
+        public Vector3 MuzzlePoint => muzzlePoint.position;
         
         WeaponData _weaponData;
         TrajectoryPredictor _trajectoryPredictor;
-        float _lastProjectileForcePercent;
-        
-        public event Action<float> OnProjectileForceChanged;
 
         public void Init(WeaponData weaponData) {
             _weaponData = weaponData;
