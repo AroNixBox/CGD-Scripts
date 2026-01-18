@@ -7,8 +7,9 @@ using UnityEngine;
 namespace Gameplay.Runtime.Player.Combat {
     public class Weapon : MonoBehaviour {
         [Tooltip("Bullet Spawn Point")]
-        [SerializeField, Required] public Transform muzzlePoint;
-        
+        [SerializeField, Required] Transform muzzlePoint;
+        [SerializeField, Required] Animator animator;
+
         float _projectileForce = 15;
         
         WeaponData _weaponData;
@@ -68,6 +69,8 @@ namespace Gameplay.Runtime.Player.Combat {
             if (Math.Abs(currentPercent - _lastProjectileForcePercent) > 0.01f) {
                 _lastProjectileForcePercent = currentPercent;
                 OnProjectileForceChanged?.Invoke(currentPercent);
+                
+                animator.SetFloat("Force", currentPercent/100);
             }
         }
         

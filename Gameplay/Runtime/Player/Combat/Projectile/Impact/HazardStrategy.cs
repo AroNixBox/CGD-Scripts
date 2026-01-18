@@ -6,9 +6,7 @@ using UnityEngine;
 namespace Gameplay.Runtime.Player.Combat {
     [Serializable]
     public class HazardStrategy : IImpactStrategy {
-        [SerializeField, AssetsOnly, Required] 
-        GameObject hazardPrefab;
-
+        [SerializeField, AssetsOnly, Required] GameObject hazardPrefab;
         [SerializeField] List<GameObject> additionalHazards;
 
         [SerializeField, Tooltip("Offset from ground surface")]
@@ -32,7 +30,9 @@ namespace Gameplay.Runtime.Player.Combat {
             Quaternion spawnRotation = Quaternion.FromToRotation(Vector3.up, impactData.Normal);
 
             var hazard = UnityEngine.Object.Instantiate(hazardPrefab, spawnPosition, spawnRotation);
-            
+            if (hazard.GetComponent<HazardPuddle>() != null)
+                hazard.GetComponent<HazardPuddle>().GeneratePuddle(impactData.Position, impactData.Normal);
+
             // Add hazard bounds points to hit origins (origin, top corners, elevated)
             foreach (var point in GetBoundsPoints(hazard)) {
                 result.HitObjectOrigins.Add(point);
