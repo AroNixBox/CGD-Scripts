@@ -7,7 +7,6 @@ using Gameplay.Runtime.Player.Camera;
 using Gameplay.Runtime.Player.Combat;
 using Gameplay.Runtime.Player.Trajectory;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace Gameplay.Runtime.Player.States.GroundedSubStates {
     public class CombatStanceState : IState {
@@ -37,27 +36,23 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
                 ).Forget();
             _weaponStash.SelectCurrentWeapon();
             _controller.OnCombatStanceStateEntered.Invoke();
+            _weaponStash.ResetShootingPower();
         }
 
         public void Tick(float deltaTime) {
-            var currentWeapon = _weaponStash.GetSpawnedWeapon();
-            if(currentWeapon != null)
-                ChangeProjectileForce(currentWeapon);
+            ChangeProjectileForce();
             AimWeapon();
-            
-            // TODO:
-            // Could add ammunition check here
-            // So we could draw the trajectory red?
-            if(currentWeapon != null)
-                currentWeapon.PredictTrajectory();
+            _weaponStash.PredictTrajectory();
         }
 
-        void ChangeProjectileForce(Weapon currentWeapon) { 
+        void ChangeProjectileForce() { 
             if (_inputReader.IsWeaponForceIncreasing)
-                currentWeapon.IncreaseProjectileForce();
+                _weaponStash.IncreaseProjectileForce();
             else if (_inputReader.IsWeaponForceDecreasing)
-                currentWeapon.DecreaseProjectileForce();
+                _weaponStash.DecreaseProjectileForce();
         }
+        
+        
 
         // Weapon Fwd = Camera Fwd
         void AimWeapon() {

@@ -18,6 +18,11 @@ namespace Gameplay.Runtime.Player.Combat {
         // Input control
         const float PressThreshold = 0.5f;
         bool _inputReset = true;
+        
+        // Shooting Power:
+        const float StartProjectileForce = 15;
+        float _projectileForce;
+        float _lastProjectileForce;
 
         // Events
         public event Action<ProjectileData.ProjectileCategory, WeaponData> OnWeaponDataAdded = delegate { };
@@ -25,7 +30,6 @@ namespace Gameplay.Runtime.Player.Combat {
         public event Action<ProjectileData.ProjectileCategory, WeaponData, int> OnAmmoChanged = delegate { };
         public event Action<Projectile> OnSuccessfulShot = delegate { };
         public event Action<float> OnProjectileForceChanged = delegate { };
-
         void Start() {
             if (loadout == null) throw new NullReferenceException("Weapon Loadout needs to be referenced");
 
@@ -164,7 +168,6 @@ namespace Gameplay.Runtime.Player.Combat {
                     break;
                 }
             }
-            
 
             DespawnSelectedWeapon();
             
@@ -174,23 +177,41 @@ namespace Gameplay.Runtime.Player.Combat {
             SpawnSelectedWeapon();
         }
 
-
         void SpawnSelectedWeapon() {
             if (_currentWeaponData == null) return;
             var currentWeaponPrefab = _currentWeaponData.Weapon;
+            
             _spawnedWeapon = Instantiate(currentWeaponPrefab, weaponSocket);
             _spawnedWeapon.Init(_currentWeaponData);
-            _spawnedWeapon.OnProjectileForceChanged += HandleProjectileForceChanged;
-            
-            // Notify initial value
-            OnProjectileForceChanged.Invoke(_spawnedWeapon.ProjectileForcePercent);
-        }
-        
-        void HandleProjectileForceChanged(float percent) {
-            OnProjectileForceChanged.Invoke(percent);
         }
 
         public WeaponData GetCurrentWeaponData() => _currentWeaponData;
+
+        public void DecreaseProjectileForce() {
+            if (_currentWeaponData == null) return;
+            
+            _projectileForce -= Time.deltaTime * _currentWeaponData.GlobalWeaponData.ProjectileForceChangeMultiplier;
+            _projectileForce = Mathf.Clamp(_projectileForce, _currentWeaponData.GlobalWeaponData.MinProjectileForce, _currentWeaponData.GlobalWeaponData.MaxProjectileForce);
+
+            NotifyProjectileForceChange();
+        }
+
+        public void IncreaseProjectileForce() {
+            if (_currentWeaponData == null) return;
+            
+            _projectileForce += Time.deltaTime * _currentWeaponData.GlobalWeaponData.ProjectileForceChangeMultiplier;
+            _projectileForce = Mathf.Clamp(_projectileForce, _currentWeaponData.GlobalWeaponData.MinProjectileForce, _currentWeaponData.GlobalWeaponData.MaxProjectileForce);
+            
+            NotifyProjectileForceChange();
+        }
+
+        void NotifyProjectileForceChange() {
+            if (Mathf.Abs(_projectileForce - _lastProjectileForce) < 0.01f) return;
+            
+            _lastProjectileForce = _projectileForce;
+            OnProjectileForceChanged?.Invoke(_projectileForce);
+            _spawnedWeapon?.SetWeaponTension(_projectileForce);
+        }
 
         public bool TryFire(out Projectile projectile) {
             projectile = null;
@@ -229,21 +250,32 @@ namespace Gameplay.Runtime.Player.Combat {
             entry.ammo--;
             targetList[targetIndex] = entry;
 
-            projectile = weapon.FireWeapon();
+            projectile = weapon.FireWeapon(_projectileForce);
             
             OnSuccessfulShot?.Invoke(projectile);
             OnAmmoChanged?.Invoke(targetCategory.Value, entry.weaponData, entry.ammo);
             return true;
         }
 
-
         public Weapon GetSpawnedWeapon() => _spawnedWeapon;
 
         public void DespawnSelectedWeapon() {
             if(_spawnedWeapon != null) {
-                _spawnedWeapon.OnProjectileForceChanged -= HandleProjectileForceChanged;
                 _spawnedWeapon.Dispose();
             }
+        }
+
+        public void ResetShootingPower() {
+            _projectileForce = StartProjectileForce;
+            _lastProjectileForce = _projectileForce;
+            
+            OnProjectileForceChanged?.Invoke(_projectileForce);
+        }
+
+        public void PredictTrajectory() {
+            if (_spawnedWeapon == null) return;
+            
+            _spawnedWeapon.PredictTrajectory(_projectileForce);
         }
     }
 }
