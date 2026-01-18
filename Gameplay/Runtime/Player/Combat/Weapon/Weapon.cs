@@ -9,26 +9,11 @@ namespace Gameplay.Runtime.Player.Combat {
         [Tooltip("Bullet Spawn Point")]
         [SerializeField, Required] public Transform muzzlePoint;
         
-        float _projectileForce = 15;
-        
         WeaponData _weaponData;
         TrajectoryPredictor _trajectoryPredictor;
         float _lastProjectileForcePercent;
         
         public event Action<float> OnProjectileForceChanged;
-        
-        /// <summary>
-        /// Returns the current projectile force as a percentage (0-100) relative to the max force.
-        /// </summary>
-        public float ProjectileForcePercent {
-            get {
-                if (_weaponData == null) return 0f;
-                var min = _weaponData.GlobalWeaponData.MinProjectileForce;
-                var max = _weaponData.GlobalWeaponData.MaxProjectileForce;
-                if (max <= min) return 0f;
-                return (_projectileForce - min) / (max - min) * 100f;
-            }
-        }
 
         public void Init(WeaponData weaponData) {
             _weaponData = weaponData;
@@ -43,35 +28,15 @@ namespace Gameplay.Runtime.Player.Combat {
             );
         }
         
-        public void PredictTrajectory() => 
+        public void PredictTrajectory(float force) => 
             _trajectoryPredictor.PredictTrajectory(
                 GetWeaponProperties(),
-                _projectileForce, 
+                force, 
                 _weaponData.ProjectileData.Mass,
                 _weaponData.ProjectileData.Drag
             );
         
-        public void IncreaseProjectileForce() {
-            _projectileForce += Time.deltaTime * _weaponData.GlobalWeaponData.ProjectileForceChangeMultiplier;
-            _projectileForce = Mathf.Clamp(_projectileForce, _weaponData.GlobalWeaponData.MinProjectileForce, _weaponData.GlobalWeaponData.MaxProjectileForce);
-            NotifyForceChangeIfNeeded();
-        }
-
-        public void DecreaseProjectileForce() {
-            _projectileForce -= Time.deltaTime * _weaponData.GlobalWeaponData.ProjectileForceChangeMultiplier;
-            _projectileForce = Mathf.Clamp(_projectileForce, _weaponData.GlobalWeaponData.MinProjectileForce, _weaponData.GlobalWeaponData.MaxProjectileForce);
-            NotifyForceChangeIfNeeded();
-        }
-        
-        void NotifyForceChangeIfNeeded() {
-            var currentPercent = ProjectileForcePercent;
-            if (Math.Abs(currentPercent - _lastProjectileForcePercent) > 0.01f) {
-                _lastProjectileForcePercent = currentPercent;
-                OnProjectileForceChanged?.Invoke(currentPercent);
-            }
-        }
-        
-        public Projectile FireWeapon() {
+        public Projectile FireWeapon(float force) {
             // Projectile
             var projectileData = _weaponData.ProjectileData;
             var projectilePrefab = projectileData.ProjectilePrefab;
@@ -81,7 +46,7 @@ namespace Gameplay.Runtime.Player.Combat {
             projectile.Init(
                 projectileData.Mass, 
                 projectileData.Drag, 
-                _projectileForce, 
+                force, 
                 muzzlePoint.forward, 
                 _weaponData.ProjectileData.ImpactData);
 
@@ -120,7 +85,6 @@ namespace Gameplay.Runtime.Player.Combat {
         // Or should this rather be done with the entire arm via IK
 
         public void Dispose() {
-            _projectileForce = 0;
             Destroy(gameObject); // TODO: Pool?
         }
     }
