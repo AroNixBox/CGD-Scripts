@@ -3,6 +3,7 @@ using Core.Runtime.Service;
 using Core.Runtime.Service.Input;
 using Gameplay.Runtime.Player;
 using Sirenix.OdinInspector;
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -19,7 +20,11 @@ namespace UI.Runtime.Menus {
         void OnEnable() {
             view.BindButtons(
                 onResume: ResumeGame,
-                onMainMenu: GoToMainMenu
+                onRestart: RestartGame,
+                onSettings: OpenSettings,
+                onHelp: OpenHelp,
+                onMainMenu: GoToMainMenu,
+                onQuit: QuitGame
             );
             view.Hide();
         }
@@ -93,15 +98,35 @@ namespace UI.Runtime.Menus {
             inputReader.EnableActionMap(InputReader.ActionMapName.Player);
         }
 
+        void RestartGame() {
+            throw new NotImplementedException();
+        }
+
+        void OpenSettings() {
+            throw new NotImplementedException();
+        }
+
+        void OpenHelp() {
+            throw new NotImplementedException();
+        }
+
         void GoToMainMenu() {
             view.Hide(); // Ensure time scale is reset
             SceneManager.LoadScene("Scenes/User Hub");
         }
 
+        void QuitGame() {
+            throw new NotImplementedException();
+        }
+
         void OnDisable() {
             view.UnbindButtons(
                 onResume: ResumeGame,
-                onMainMenu: GoToMainMenu
+                onRestart: RestartGame,
+                onSettings: OpenSettings,
+                onHelp: OpenHelp,
+                onMainMenu: GoToMainMenu,
+                onQuit: QuitGame
             );
         }
 
