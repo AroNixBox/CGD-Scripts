@@ -29,21 +29,19 @@ namespace UI.Runtime.Menus {
             Time.timeScale = 1;
         }
         
-        public void BindButtons(UnityAction onResume, UnityAction onRestart, UnityAction onSettings, UnityAction onHelp, UnityAction onMainMenu, UnityAction onQuit) {
+        public void BindButtons(UnityAction onResume, UnityAction onRestart, UnityAction onSettings, UnityAction onHelp, UnityAction onMenu, UnityAction onQuit) {
             resumeButton.onClick.AddListener(onResume);
             restartButton.onClick.AddListener(onRestart);
             settingsButton.onClick.AddListener(onSettings);
             helpButton.onClick.AddListener(onHelp);
-            mainMenuButton.onClick.AddListener(onMainMenu);
+            mainMenuButton.onClick.AddListener(onMenu);
             quitButton.onClick.AddListener(onQuit);
         }
         
-        public void UnbindButtons(UnityAction onResume, UnityAction onRestart, UnityAction onSettings, UnityAction onHelp, UnityAction onMainMenu, UnityAction onQuit) {
+        public void UnbindButtons(UnityAction onResume, UnityAction onSettings, UnityAction onHelp, UnityAction onQuit) {
             resumeButton.onClick.RemoveListener(onResume);
-            restartButton.onClick.RemoveListener(onRestart);
             settingsButton.onClick.RemoveListener(onSettings);
             helpButton.onClick.RemoveListener(onHelp);
-            mainMenuButton.onClick.RemoveListener(onMainMenu);
             quitButton.onClick.RemoveListener(onQuit);
         }
     }

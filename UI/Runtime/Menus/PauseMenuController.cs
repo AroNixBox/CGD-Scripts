@@ -20,10 +20,10 @@ namespace UI.Runtime.Menus {
         void OnEnable() {
             view.BindButtons(
                 onResume: ResumeGame,
-                onRestart: RestartGame,
+                onRestart: () => SceneManager.LoadScene(SceneManager.GetActiveScene().name),
                 onSettings: OpenSettings,
                 onHelp: OpenHelp,
-                onMainMenu: GoToMainMenu,
+                onMenu: () => SceneManager.LoadScene("Scenes/User Hub"),
                 onQuit: QuitGame
             );
             view.Hide();
@@ -98,21 +98,12 @@ namespace UI.Runtime.Menus {
             inputReader.EnableActionMap(InputReader.ActionMapName.Player);
         }
 
-        void RestartGame() {
-            throw new NotImplementedException();
-        }
-
         void OpenSettings() {
             throw new NotImplementedException();
         }
 
         void OpenHelp() {
             throw new NotImplementedException();
-        }
-
-        void GoToMainMenu() {
-            view.Hide(); // Ensure time scale is reset
-            SceneManager.LoadScene("Scenes/User Hub");
         }
 
         void QuitGame() {
@@ -122,10 +113,8 @@ namespace UI.Runtime.Menus {
         void OnDisable() {
             view.UnbindButtons(
                 onResume: ResumeGame,
-                onRestart: RestartGame,
                 onSettings: OpenSettings,
                 onHelp: OpenHelp,
-                onMainMenu: GoToMainMenu,
                 onQuit: QuitGame
             );
         }
