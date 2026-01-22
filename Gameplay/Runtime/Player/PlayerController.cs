@@ -45,6 +45,7 @@ namespace Gameplay.Runtime.Player {
         [Title("Movement")]
         [InfoBox("<i>When Changing the MovementSpeed, dont forget to change the Locomotion-Animation-State Thresholds on the Animator</i>", InfoMessageType.Warning)]
         [SerializeField] float movementSpeed = 3f;
+        [SerializeField] float initialSpeedMultiplier = 1f;
         [SerializeField] float maxMovementTimePerTurn = 5f;
         [SerializeField] float airFriction = .5f;
         [SerializeField] float airControlRate = 1.5f;
@@ -80,13 +81,10 @@ namespace Gameplay.Runtime.Player {
         
         StateMachine _stateMachine;
 
-        private readonly List<float> _speedMultipliers = new() { 1f };
-        private float _speedMultiplier = 1f;
-        
-        public float MovementSpeed => movementSpeed;
-        public float SpeedMultiplier => _speedMultiplier;
-        
-        public float EffectiveMovementSpeed => movementSpeed * _speedMultiplier;
+        readonly List<float> _activeSpeedMultipliers = new();
+        float _speedMultiplier;
+
+        float EffectiveMovementSpeed => movementSpeed * _speedMultiplier;
 
         Vector3 _momentum, _savedVelocity, _savedMovementVelocity, _externalForces;
         public event Action<Vector3> OnLand = delegate { }; // TODO: Call when entering Grounded State
@@ -391,69 +389,20 @@ namespace Gameplay.Runtime.Player {
             Gizmos.DrawSphere(transform.position + Vector3.up * drawHeight, drawRadius);
         }
 
-        //Sorted adding of speed multiplier
-        public void AddSpeedMultiplier(float speedMultiplier) {
-            //Debug.Log("Adding: " + speedMultiplier);
-            int index = _speedMultipliers.BinarySearch(speedMultiplier);
-
-            if (index < 0) {
-                index = ~index;
-            }
-
-            _speedMultipliers.Insert(index, speedMultiplier);
-            _speedMultiplier = _speedMultipliers[0];
-
-            //string result = "Mutlipliers: ";
-            //foreach (var item in _speedMultipliers) {
-            //    result += item.ToString() + ", ";
-            //}
-            //Debug.Log(result);
-        }
-
-        private void RemoveSpeedMultiplier(float speedMultiplier) {
-            //Debug.Log("Removing: " + speedMultiplier);
-            if (_speedMultipliers.Count == 0)
-                return;
-
-            int index = _speedMultipliers.BinarySearch(speedMultiplier);
-
-            // Falls exakter Wert nicht gefunden wurde, checke Nachbarn wegen Float-Ungenauigkeit
-            if (index < 0) {
-                index = ~index;
-
-                // Links prüfen
-                if (index > 0 && Mathf.Abs(_speedMultipliers[index - 1] - speedMultiplier) < 0.001f)
-                    index--;
-                // Rechts prüfen
-                else if (index < _speedMultipliers.Count && Mathf.Abs(_speedMultipliers[index] - speedMultiplier) < 0.001f);
-                    //frag mich nich warum man hier nix macht, aber es funktioniert ig
-                else
-                    return;
-            }
-
-            _speedMultipliers.RemoveAt(index);
-
-            if (_speedMultipliers.Count == 0) {
-                _speedMultipliers.Add(1f);
-            }
-            _speedMultiplier = _speedMultipliers[0];
-
-            //string result = "Mutlipliers: ";
-            //foreach (var item in _speedMultipliers) {
-            //    result += item.ToString() + ", ";
-            //}
-            //Debug.Log(result);
-        }
-
-        //Keeping track of all speed multipliers in case player walks into multiple so lowest is chosen at all times. Also allows wobble free walking through tar pit
         public void SetSpeedMultiplier(float speedMultiplier) {
-            AddSpeedMultiplier(speedMultiplier);
-
-            AnimatorController.UpdateAnimatorSpeed(EffectiveMovementSpeed);
+            _activeSpeedMultipliers.Add(speedMultiplier);
+            UpdateSpeedMultiplier();
         }
         
-        public void ResetSpeedMultiplier(float speedMultiplier) {
-            RemoveSpeedMultiplier(speedMultiplier);
+        public void RemoveSpeedMultiplier(float speedMultiplier) {
+            _activeSpeedMultipliers.Remove(speedMultiplier);
+            UpdateSpeedMultiplier();
+        }
+        
+        void UpdateSpeedMultiplier() {
+            _speedMultiplier = _activeSpeedMultipliers.Count > 0
+                ? Mathf.Min(_activeSpeedMultipliers.ToArray())
+                : initialSpeedMultiplier;
 
             AnimatorController.UpdateAnimatorSpeed(EffectiveMovementSpeed);
         }

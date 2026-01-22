@@ -13,8 +13,7 @@ namespace Gameplay.Runtime
         }
         protected override void ExitEffect(GameObject target, HazardData hazardData) {
             if (!target.TryGetComponent(out PlayerController playerController)) return;
-            playerController.ResetSpeedMultiplier(slowDownFactor);
+            playerController.RemoveSpeedMultiplier(slowDownFactor);
         }
-
     }
 }
