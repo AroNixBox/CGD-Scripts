@@ -115,6 +115,9 @@ namespace Gameplay.Runtime.Player {
             
             gameManager.OnGameStart += SetupStateMachine;
             gameManager.OnGameStart += InputReader.EnablePlayerActions;
+            
+            // Values
+            _speedMultiplier = initialSpeedMultiplier;
         }
 
         void SetupStateMachine() {
