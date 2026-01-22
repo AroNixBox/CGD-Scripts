@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using Gameplay.Runtime;
 using UnityEngine;
 
 public class HazardPuddle : MonoBehaviour {
     [Header("Puddle Settings")]
     [SerializeField] private GameObject droplet;
+    [SerializeField] private Hazard hazardPrefab;
     [SerializeField] private float puddleRadius = 1.2f;
     [SerializeField] private float minPointDistance = 0.15f;
     [SerializeField] private int poissonTries = 30;
@@ -21,6 +23,23 @@ public class HazardPuddle : MonoBehaviour {
 
     public void GeneratePuddle(Vector3 hitPoint, Vector3 hitNormal) {
         sampledPoints.Clear();
+        
+        // Create parent GameObject with SphereCollider
+        GameObject parentPuddle = null;
+        if (hazardPrefab != null) {
+            parentPuddle = Instantiate(hazardPrefab.gameObject, hitPoint, Quaternion.identity);
+            
+            // Get or add SphereCollider
+            var sphereCollider = parentPuddle.GetComponent<SphereCollider>();
+            if (sphereCollider == null) {
+                sphereCollider = parentPuddle.AddComponent<SphereCollider>();
+            }
+            
+            // Set radius to match puddle radius (slightly larger to account for 3D distribution)
+            sphereCollider.radius = puddleRadius * 1.8f;
+            sphereCollider.isTrigger = true;
+        }
+        
         BuildBasis(hitNormal, out Vector3 right, out Vector3 forward);
         List<Vector2> poissonPoints = GeneratePoissonDisk2D(puddleRadius, minPointDistance, poissonTries);
 
@@ -44,7 +63,9 @@ public class HazardPuddle : MonoBehaviour {
                 if (!drawGizmos && droplet != null) {
                     Quaternion rot = Quaternion.FromToRotation(Vector3.up, hit.normal);
 
-                    GameObject d = Instantiate(droplet, finalPos, rot, transform);
+                    // Parent droplets under the hazard parent if it exists
+                    Transform parentTransform = parentPuddle != null ? parentPuddle.transform : transform;
+                    GameObject d = Instantiate(droplet, finalPos, rot, parentTransform);
                     d.transform.localScale *= Random.Range(0.9f, 1.1f);
 
                 }
