@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 public class TerrainHeightWriter : MonoBehaviour {
@@ -8,18 +9,18 @@ public class TerrainHeightWriter : MonoBehaviour {
     [SerializeField] private int resolution = 348;
     [SerializeField] private float worldSize = 128f;
 
-    [SerializeField] private Material heightWriteMaterial;
-    [SerializeField] private Material terrainMaterial;
+    [SerializeField, Required] private Material heightWriteMaterial;
+    [SerializeField, Required] private Material terrainMaterial;
 
     private RenderTexture heightTar;
     private RenderTexture heightLava;
-    private int seedTar = 0;
-    private int seedLava = 69;
+    private readonly int seedTar = 0;
+    private readonly int seedLava = 69;
 
     private void Start() {
-        heightTar = new RenderTexture(resolution, resolution, 0, RenderTextureFormat.R16) {enableRandomWrite = false};
+        heightTar = new RenderTexture(resolution, resolution, 0, RenderTextureFormat.R16) { enableRandomWrite = false };
         heightTar.Create();
-        heightLava = new RenderTexture(resolution, resolution, 0, RenderTextureFormat.R16) {enableRandomWrite = false};
+        heightLava = new RenderTexture(resolution, resolution, 0, RenderTextureFormat.R16) { enableRandomWrite = false };
         heightLava.Create();
 
         terrainMaterial.SetTexture("_HeightTexTar", heightTar);
@@ -53,6 +54,7 @@ public class TerrainHeightWriter : MonoBehaviour {
 
         foreach (Transform t in positions) {
             heightWriteMaterial.SetVector("_Center", t.position);
+            heightWriteMaterial.SetFloat("_DistanceMultiplier", t.localScale.x / 5);
             Graphics.Blit(null, map, heightWriteMaterial);
         }
 

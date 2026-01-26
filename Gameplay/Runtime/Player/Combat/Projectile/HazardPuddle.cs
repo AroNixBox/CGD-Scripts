@@ -1,9 +1,12 @@
 using System.Collections.Generic;
+using Sirenix.OdinInspector;
 using Gameplay.Runtime;
 using UnityEngine;
 
 public class HazardPuddle : MonoBehaviour {
     [Header("Puddle Settings")]
+    [SerializeField, Required] private string hazardName;
+    [SerializeField] private GameObject hazarProxy;
     [SerializeField] private GameObject droplet;
     [SerializeField] private Hazard hazardPrefab;
     [SerializeField] private float puddleRadius = 1.2f;
@@ -20,6 +23,21 @@ public class HazardPuddle : MonoBehaviour {
     [SerializeField] private float gizmoSphereRadius = 0.05f;
 
     private readonly List<Vector3> sampledPoints = new();
+
+    public void GeneratePuddle(Vector3 hitPoint) {
+        var staticParent = GameObject.Find("Static");
+        var terrainWriter = staticParent.GetComponent<SceneObjects>().OffsetTerrain.GetComponent<TerrainHeightWriter>();
+        var proxy = Instantiate(hazarProxy, hitPoint, Quaternion.identity, staticParent.GetComponent<SceneObjects>().Tars);
+        proxy.transform.localScale = new(puddleRadius, puddleRadius, puddleRadius);
+        //proxy.GetComponent<SphereCollider>().radius = puddleRadius * 1.2f;
+
+        terrainWriter.ChangeTargets(hazardName, proxy.transform);
+        terrainWriter.RefreshTexture(hazardName);
+
+        //find gameobject "Static", get child "tars/lavas", use as parent to
+        //spawn empty as child
+        //call child "HazardMapLayer", find component "TerrainHeightWriter", access RefreshTexture(mode)
+    }
 
     public void GeneratePuddle(Vector3 hitPoint, Vector3 hitNormal) {
         sampledPoints.Clear();

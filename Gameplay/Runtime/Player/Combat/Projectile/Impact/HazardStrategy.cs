@@ -31,7 +31,7 @@ namespace Gameplay.Runtime.Player.Combat {
 
             var hazard = UnityEngine.Object.Instantiate(hazardPrefab, spawnPosition, spawnRotation);
             if (hazard.GetComponent<HazardPuddle>() != null)
-                hazard.GetComponent<HazardPuddle>().GeneratePuddle(impactData.Position, impactData.Normal);
+                hazard.GetComponent<HazardPuddle>().GeneratePuddle(impactData.Position);
 
             // Add hazard bounds points to hit origins (origin, top corners, elevated)
             foreach (var point in GetBoundsPoints(hazard)) {
