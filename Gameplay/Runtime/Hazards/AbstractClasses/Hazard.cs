@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Core.Runtime;
 using Core.Runtime.Authority;
 using Core.Runtime.Service;
 using UnityEngine;
@@ -31,6 +30,12 @@ namespace Gameplay.Runtime {
         protected readonly Dictionary<AuthorityEntity, HazardData> EntitiesInHazard = new();
         protected int TurnCounter = 0;
 
+        protected TerrainHeightWriter terrainHazardManager;
+        private HazardType hazardType;
+
+        public TerrainHeightWriter TerrainHazardManager { set => terrainHazardManager = value; }
+        public HazardType HazardType { set => hazardType = value; }
+
         // 2.
         protected virtual void Start() {
             ValidateInheritance();
@@ -54,12 +59,16 @@ namespace Gameplay.Runtime {
             if (AuthorityManager == null) return;
             if(turnDuration >= 0) AuthorityManager.OnEntityAuthorityGained -= CheckAlive;
         }
-        
+
+        int ActualTurn => turnDuration * AuthorityManager.EntityCount;
+
         private void CheckAlive(AuthorityEntity _) {
             TurnCounter++;
-            if (TurnCounter <= turnDuration * AuthorityManager.EntityCount) return;
+            Debug.Log("Turncounter: " + TurnCounter + "/" + ActualTurn);
+            if (TurnCounter <= ActualTurn) return;
             // turnDuration == 0 means survive one player turn
             if (turnDuration == 0 && TurnCounter == 1) return;
+            if (terrainHazardManager != null) terrainHazardManager.ChangeTargets(hazardType, transform);
             Destroy(gameObject);
         }
         
@@ -82,7 +91,5 @@ namespace Gameplay.Runtime {
             if (!other.TryGetComponent(out AuthorityEntity authorityEntity)) return;
             EntitiesInHazard.Remove(authorityEntity);
         }
-
-        
     }
 }
