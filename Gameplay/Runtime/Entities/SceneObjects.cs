@@ -3,12 +3,10 @@ using Sirenix.OdinInspector;
 
 namespace Gameplay.Runtime {
     public class SceneObjects : MonoBehaviour {
-        [SerializeField, Required] private Transform tars;
-        [SerializeField, Required] private Transform lavas;
+        [SerializeField, Required] private Transform hazards;
         [SerializeField, Required] private TerrainHeightWriter offsetTerrain;
 
-        public Transform Tars => tars;
-        public Transform Lavas => lavas;
+        public Transform Hazards => hazards;
         public TerrainHeightWriter OffsetTerrain => offsetTerrain;
     }
 }

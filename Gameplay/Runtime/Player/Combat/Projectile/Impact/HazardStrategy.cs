@@ -30,8 +30,8 @@ namespace Gameplay.Runtime.Player.Combat {
             Quaternion spawnRotation = Quaternion.FromToRotation(Vector3.up, impactData.Normal);
 
             var hazard = UnityEngine.Object.Instantiate(hazardPrefab, spawnPosition, spawnRotation);
-            if (hazard.GetComponent<HazardPuddle>() != null)
-                hazard.GetComponent<HazardPuddle>().GeneratePuddle(impactData.Position);
+            if (hazard.GetComponent<HazardSpawner>() != null)
+                hazard.GetComponent<HazardSpawner>().GeneratePuddle(impactData.Position);
 
             // Add hazard bounds points to hit origins (origin, top corners, elevated)
             foreach (var point in GetBoundsPoints(hazard)) {
