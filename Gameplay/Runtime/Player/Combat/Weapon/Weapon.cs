@@ -8,8 +8,11 @@ namespace Gameplay.Runtime.Player.Combat {
     public class Weapon : MonoBehaviour {
         [Tooltip("Bullet Spawn Point")]
         [SerializeField, Required] Transform muzzlePoint;
-        [SerializeField, Required] Animator animator;
-        
+        [SerializeField] Animator animator;
+        [SerializeField] Renderer material;
+
+        private MaterialPropertyBlock mpb;
+
         static readonly int Force = Animator.StringToHash("Force");
         
         WeaponData _weaponData;
@@ -17,16 +20,20 @@ namespace Gameplay.Runtime.Player.Combat {
 
         public void Init(WeaponData weaponData) {
             _weaponData = weaponData;
+            mpb = new MaterialPropertyBlock();
             if (!ServiceLocator.TryGet(out _trajectoryPredictor))
                 throw new NullReferenceException("Trajectory Projector not available via Service Locator");
         }
         
         public void SetWeaponTension(float currentPercent) {
-            if (animator == null) return;
-            
-            animator?.SetFloat(Force, currentPercent / 100);
-        }
+            if (animator != null)
+                animator?.SetFloat(Force, currentPercent / 100);
 
+            if (material != null) {
+                mpb.SetFloat("_Activity", currentPercent / 100);
+                material.SetPropertyBlock(mpb);
+            }
+        }
 
         WeaponProperties GetWeaponProperties() {
             return new WeaponProperties(
