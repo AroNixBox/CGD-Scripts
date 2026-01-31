@@ -75,15 +75,25 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             
             // A Damageable can be destroyed, and we still want to observer the point where the damageable was :)
             // Create list with impact position + all POIs
-            var impactCameraFocusPoints = new List<Transform>();
-            impactCameraFocusPoints.Add(projectileImpactPosDummy);
+            var staticFocusPoints = new List<Transform>();
+            staticFocusPoints.Add(projectileImpactPosDummy);
 
             for (var i = 0; i < impactResult.HitObjectOrigins.Count; i++) {
                 var cameraFocusPoint = GetObjectFromPool(impactResult.HitObjectOrigins[i], $"Hit Object Transform {i}");
-                impactCameraFocusPoints.Add(cameraFocusPoint);
+                staticFocusPoints.Add(cameraFocusPoint);
             }
 
-            _cameraControls.SetBulletCameraTargets(impactCameraFocusPoints);
+            var allFocusPoints = new List<Transform>();
+            allFocusPoints.AddRange(staticFocusPoints);
+            
+            // TODO:
+            if (impactResult.HitEntities != null) {
+                foreach (var hitEntity in impactResult.HitEntities) {
+                    allFocusPoints.Add(hitEntity);
+                }
+            }
+
+            _cameraControls.SetBulletCameraTargets(allFocusPoints);
             
             // Wait for post-impact delay
             await UniTask.WaitForSeconds(_controller.PostImpactDelay * 3);
@@ -91,7 +101,7 @@ namespace Gameplay.Runtime.Player.States.GroundedSubStates {
             
             // Release objects back to the pool
             var pool = GetFocusPool();
-            foreach (var point in impactCameraFocusPoints) {
+            foreach (var point in staticFocusPoints) {
                 if(point != null) pool.Release(point);
             }
             

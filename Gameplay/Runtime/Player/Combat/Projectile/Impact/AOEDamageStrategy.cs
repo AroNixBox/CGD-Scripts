@@ -26,7 +26,8 @@ namespace Gameplay.Runtime.Player.Combat {
         // [field: SerializeField] public float DistanceMultiplierValue { get; private set; }
         public ImpactResult OnImpact(Vector3 impactPosition) {
             var result = new ImpactResult {
-                HitObjectOrigins = new List<Vector3>()
+                HitObjectOrigins = new List<Vector3>(),
+                HitEntities = new List<Transform>()
             };
             var overlappedObjects = Physics.OverlapSphere(impactPosition, aoeRadius);
             
@@ -45,22 +46,30 @@ namespace Gameplay.Runtime.Player.Combat {
                 // Clamp is needed because objects origin can be further away than aoeRadius due to using Origin instead of collision point
                 var distanceScore = Mathf.Clamp(distanceObjectFromCenter / aoeRadius, 0, 1); 
                 var intensity = damageDropoffCurve.Evaluate(distanceScore);
-
-                result.HitObjectOrigins.Add(overlappedObject.transform.position);
-
-                var allColliders = overlappedObject.transform.GetComponentsInChildren<Collider>();
-                if (allColliders.Length > 0) {
-                    var bounds = allColliders[0].bounds;
-                    foreach (var col in allColliders) bounds.Encapsulate(col.bounds);
-                    
-                    var topPoint = new Vector3(bounds.center.x, bounds.max.y, bounds.center.z);
-                    result.HitObjectOrigins.Add(topPoint);
-                }
+                
                 float dmg = ApplyDamage(damageable, intensity);
+                
+                // If the target is still alive, we can use it as tracking point
+                if (damageable.GetHealth() > 0) {
+                    result.HitEntities.Add(overlappedObject.transform);
+                }
+                else { // Else store it in static Positions
+                    result.HitObjectOrigins.Add(overlappedObject.transform.position);
+                    
+                    // And add an additional top point to capture the bottom and the top for the object (have it entirely in the frame)
+                    var allColliders = overlappedObject.transform.GetComponentsInChildren<Collider>();
+                    if (allColliders.Length > 0) {
+                        var bounds = allColliders[0].bounds;
+                        foreach (var col in allColliders) bounds.Encapsulate(col.bounds);
+                    
+                        var topPoint = new Vector3(bounds.center.x, bounds.max.y, bounds.center.z);
+                        result.HitObjectOrigins.Add(topPoint);
+                    }
+                }
                 
                 // log only if player
                 if (damageable is EntityHealth health) 
-                    if (health.TryGetComponent(out PlayerController ctrl)) 
+                    if (health.TryGetComponent(out PlayerController _)) 
                         result.TotalDamageDealt = dmg;
                 
                 result.TotalKnockbackApplied = ApplyPhysics(damageable, intensity, impactPosition);

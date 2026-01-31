@@ -10,6 +10,7 @@ namespace Gameplay.Runtime.Player.Combat {
         public float TotalKnockbackApplied;
         public int TargetsHit;
         public List<Vector3> HitObjectOrigins;
+        public List<Transform> HitEntities;
     }
 
     /// <summary>
