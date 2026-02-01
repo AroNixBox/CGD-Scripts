@@ -42,7 +42,7 @@ float perlin(float2 p)
 }
 
 // FBM für Shader Graph
-void fbm_float(float2 UV, int Octaves, float Lacunarity, float Roughness, out float value)
+void fbm_float(float2 UV, int Octaves, float Lacunarity, float Roughness, float seed, out float value)
 {
     value = 0.0;
     float amplitude = 0.5;
@@ -50,7 +50,7 @@ void fbm_float(float2 UV, int Octaves, float Lacunarity, float Roughness, out fl
 
     for (int i = 0; i < Octaves; ++i)
     {
-        value += amplitude * perlin(UV * frequency);
+        value += amplitude * perlin(UV * frequency + seed);
         frequency *= Lacunarity;
         amplitude *= Roughness;
     }
