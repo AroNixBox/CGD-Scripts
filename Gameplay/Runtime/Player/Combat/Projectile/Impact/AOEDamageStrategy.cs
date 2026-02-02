@@ -24,7 +24,7 @@ namespace Gameplay.Runtime.Player.Combat {
         // [field: SerializeField] public float DropoffBeginDistance { get; private set; }
         // [field: SerializeField] public float DropoffEndDistance { get; private set; }
         // [field: SerializeField] public float DistanceMultiplierValue { get; private set; }
-        public ImpactResult OnImpact(Vector3 impactPosition) {
+        public virtual ImpactResult OnImpact(Vector3 impactPosition) {
             var result = new ImpactResult {
                 HitObjectOrigins = new List<Vector3>()
             };
