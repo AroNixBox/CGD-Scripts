@@ -104,8 +104,9 @@ namespace Gameplay.Runtime.Player.Combat {
                 // Clamp is needed because objects origin can be further away than aoeRadius due to using Origin instead of collision point
                 var distanceScore = Mathf.Clamp(distanceObjectFromCenter / aoeRadius, 0, 1);
                 var damageIntensity = damageDropoffCurve.Evaluate(distanceScore) * rangeMultiplier;
-                var knockbackIntensity = knockbackDropoffCurve.Evaluate(distanceScore) * rangeKnockbackMultiplier;
 
+                float dmg = ApplyDamage(damageable, damageIntensity);
+                
                 // If the target is still alive, we can use it as tracking point
                 if (damageable.GetHealth() > 0) {
                     result.HitEntities.Add(overlappedObject.transform);
@@ -123,8 +124,7 @@ namespace Gameplay.Runtime.Player.Combat {
                     }
                 }
 
-
-                float dmg = ApplyDamage(damageable, damageIntensity);
+                var knockbackIntensity = knockbackDropoffCurve.Evaluate(distanceScore) * rangeKnockbackMultiplier;
 
                 // log only if player
                 if (damageable is EntityHealth health)
