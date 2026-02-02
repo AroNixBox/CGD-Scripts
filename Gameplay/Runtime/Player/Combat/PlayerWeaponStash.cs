@@ -183,6 +183,8 @@ namespace Gameplay.Runtime.Player.Combat {
             
             _spawnedWeapon = Instantiate(currentWeaponPrefab, weaponSocket);
             _spawnedWeapon.Init(_currentWeaponData);
+
+            NotifyProjectileForceChange(true);
         }
 
         public WeaponData GetCurrentWeaponData() => _currentWeaponData;
@@ -193,7 +195,7 @@ namespace Gameplay.Runtime.Player.Combat {
             _projectileForce -= Time.deltaTime * _currentWeaponData.GlobalWeaponData.ProjectileForceChangeMultiplier;
             _projectileForce = Mathf.Clamp(_projectileForce, _currentWeaponData.GlobalWeaponData.MinProjectileForce, _currentWeaponData.GlobalWeaponData.MaxProjectileForce);
 
-            NotifyProjectileForceChange();
+            NotifyProjectileForceChange(false);
         }
 
         public void IncreaseProjectileForce() {
@@ -202,12 +204,13 @@ namespace Gameplay.Runtime.Player.Combat {
             _projectileForce += Time.deltaTime * _currentWeaponData.GlobalWeaponData.ProjectileForceChangeMultiplier;
             _projectileForce = Mathf.Clamp(_projectileForce, _currentWeaponData.GlobalWeaponData.MinProjectileForce, _currentWeaponData.GlobalWeaponData.MaxProjectileForce);
             
-            NotifyProjectileForceChange();
+            NotifyProjectileForceChange(false);
         }
 
-        void NotifyProjectileForceChange() {
-            if (Mathf.Abs(_projectileForce - _lastProjectileForce) < 0.01f) return;
-            
+        void NotifyProjectileForceChange(bool forced) {
+            if (forced == false)
+                if (Mathf.Abs(_projectileForce - _lastProjectileForce) < 0.01f) return;
+
             _lastProjectileForce = _projectileForce;
             OnProjectileForceChanged?.Invoke(_projectileForce);
             _spawnedWeapon?.SetWeaponTension(_projectileForce);
