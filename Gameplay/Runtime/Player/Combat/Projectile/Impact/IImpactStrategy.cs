@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Gameplay.Runtime.Player.Combat {
@@ -18,17 +18,35 @@ namespace Gameplay.Runtime.Player.Combat {
     public struct ImpactData {
         public Vector3 Position;
         public Vector3 Normal;
+        public Vector3 ShooterPosition;
         
         public static ImpactData FromPosition(Vector3 position) => new ImpactData {
             Position = position,
-            Normal = Vector3.up
+            Normal = Vector3.up,
+            ShooterPosition = Vector3.zero
+        };
+        
+        public static ImpactData FromPosition(Vector3 position, Vector3 shooterPosition) => new ImpactData {
+            Position = position,
+            Normal = Vector3.up,
+            ShooterPosition = shooterPosition
         };
         
         public static ImpactData FromCollision(Collision collision) {
             var contact = collision.GetContact(0);
             return new ImpactData {
                 Position = contact.point,
-                Normal = contact.normal
+                Normal = contact.normal,
+                ShooterPosition = Vector3.zero
+            };
+        }
+        
+        public static ImpactData FromCollision(Collision collision, Vector3 shooterPosition) {
+            var contact = collision.GetContact(0);
+            return new ImpactData {
+                Position = contact.point,
+                Normal = contact.normal,
+                ShooterPosition = shooterPosition
             };
         }
     }

@@ -250,7 +250,9 @@ namespace Gameplay.Runtime.Player.Combat {
             entry.ammo--;
             targetList[targetIndex] = entry;
 
-            projectile = weapon.FireWeapon(_projectileForce);
+            // Get shooter position from the player (owner of this WeaponStash)
+            var shooterPosition = transform.root.position;
+            projectile = weapon.FireWeapon(_projectileForce, shooterPosition);
             
             OnSuccessfulShot?.Invoke(projectile);
             OnAmmoChanged?.Invoke(targetCategory.Value, entry.weaponData, entry.ammo);

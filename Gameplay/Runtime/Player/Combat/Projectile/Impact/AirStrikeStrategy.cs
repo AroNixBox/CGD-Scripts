@@ -112,7 +112,8 @@ namespace Gameplay.Runtime.Player.Combat {
                 projectileDrag,
                 initialDownwardForce,
                 Vector3.down,
-                airStrikeImpactData
+                airStrikeImpactData,
+                Vector3.zero // No specific shooter position
             );
         }
     }

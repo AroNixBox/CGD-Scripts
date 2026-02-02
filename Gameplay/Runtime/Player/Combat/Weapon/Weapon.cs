@@ -43,7 +43,7 @@ namespace Gameplay.Runtime.Player.Combat {
                 _weaponData.ProjectileData.Drag
             );
 
-        public Projectile FireWeapon(float force) {
+        public Projectile FireWeapon(float force, Vector3 shooterPosition) {
             // Projectile
             var projectileData = _weaponData.ProjectileData;
             var projectilePrefab = projectileData.ProjectilePrefab;
@@ -55,7 +55,8 @@ namespace Gameplay.Runtime.Player.Combat {
                 projectileData.Drag, 
                 force, 
                 muzzlePoint.forward, 
-                _weaponData.ProjectileData.ImpactData);
+                _weaponData.ProjectileData.ImpactData,
+                shooterPosition);
 
             if (_weaponData.ProjectileData.FiredSound != null)
                 PlayFireSound(_weaponData.ProjectileData.FiredSound);

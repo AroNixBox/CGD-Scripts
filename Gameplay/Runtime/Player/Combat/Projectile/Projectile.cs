@@ -16,6 +16,7 @@ namespace Gameplay.Runtime.Player.Combat {
         CountdownTimer _lifetimeTimer;
 
         ProjectileImpactData _impactData;
+        Vector3 _shooterPosition;
         public ProjectileImpactData GetImpactData() => _impactData;
         
         /// <summary>
@@ -29,11 +30,12 @@ namespace Gameplay.Runtime.Player.Combat {
         }
 
         // "Constructor"
-        public void Init(float mass, float drag, float force, Vector3 direction, ProjectileImpactData impactData) {
+        public void Init(float mass, float drag, float force, Vector3 direction, ProjectileImpactData impactData, Vector3 shooterPosition) {
             if(impactData == null)
                 throw new NullReferenceException("Impact Data null");
             
             _impactData = impactData;
+            _shooterPosition = shooterPosition;
 
             if (_impactData.GetProjectileActionTrigger() == 
                 ProjectileImpactData.EProjectileActionTrigger.Countdown) {
@@ -104,8 +106,8 @@ namespace Gameplay.Runtime.Player.Combat {
             
             // Use collision data if available, otherwise fallback to transform position
             var impactData = collision is { contactCount: > 0 }
-                ? ImpactData.FromCollision(collision)
-                : ImpactData.FromPosition(transform.position);
+                ? ImpactData.FromCollision(collision, _shooterPosition)
+                : ImpactData.FromPosition(transform.position, _shooterPosition);
             
             var impactResult = impactStrategy.OnImpact(impactData);
 
