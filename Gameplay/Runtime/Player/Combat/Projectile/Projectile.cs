@@ -11,6 +11,7 @@ namespace Gameplay.Runtime.Player.Combat {
         
         Rigidbody _rb;
         bool _hasImpacted;
+        bool _countdownStarted;
         
         CountdownTimer _lifetimeTimer;
 
@@ -37,8 +38,8 @@ namespace Gameplay.Runtime.Player.Combat {
             if (_impactData.GetProjectileActionTrigger() == 
                 ProjectileImpactData.EProjectileActionTrigger.Countdown) {
                 _projectileActionTimer = new CountdownTimer(impactData.GetProjectileActionCountdown());
-                _projectileActionTimer.Start();
                 _projectileActionTimer.OnTimerStop += OnProjectileTimerActionComplete;
+                // Timer wird bei erster Kollision gestartet, nicht beim Launch
             }
             
             _lifetimeTimer ??= new CountdownTimer(fallbackLifetime);
@@ -64,6 +65,16 @@ namespace Gameplay.Runtime.Player.Combat {
             _rb.linearDamping = 0;
         }
         void OnCollisionEnter(Collision collision) {
+            // Für Countdown-Trigger: Timer bei erster Kollision starten
+            if (_impactData.GetProjectileActionTrigger() == 
+                ProjectileImpactData.EProjectileActionTrigger.Countdown) {
+                if (!_countdownStarted && _projectileActionTimer != null) {
+                    _countdownStarted = true;
+                    _projectileActionTimer.Start();
+                }
+                return;
+            }
+            
             if (_impactData.GetProjectileActionTrigger() !=
                 ProjectileImpactData.EProjectileActionTrigger.FirstCollision) return;
             
