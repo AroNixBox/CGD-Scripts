@@ -38,12 +38,5 @@ namespace UI.Runtime.Level {
             // Last one is active
             entry.transform.SetAsLastSibling();
         }
-
-        public void UpdateAmmo(WeaponData data, int amount) {
-            var entry = _entries.FirstOrDefault(e => e.Data == data);
-            if (entry != null) {
-                entry.SetAmmo(amount);
-            }
-        }
     }
 }

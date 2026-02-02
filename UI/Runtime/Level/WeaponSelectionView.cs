@@ -32,15 +32,6 @@ namespace UI.Runtime.Level {
             category.AddEntry(weaponEntryPrefab, data);
         }
 
-        public void UpdateWeaponAmmo(ProjectileData.ProjectileCategory categoryName, WeaponData data, int amount) {
-            if (!_categories.TryGetValue(categoryName, out var category)) {
-                Debug.LogError("[WeaponSelectionView] Could not find category to update ammo: " + categoryName);
-                return;
-            }
-            
-            category.UpdateAmmo(data, amount);
-        }
-
         public void UpdateCurrentAmmoDisplay(int amount) => SetCurrentAmmoText(amount);
         
         public void SelectWeapon(ProjectileData.ProjectileCategory categoryName, WeaponData data) {
