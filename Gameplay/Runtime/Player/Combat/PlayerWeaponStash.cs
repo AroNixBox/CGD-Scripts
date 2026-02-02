@@ -208,7 +208,7 @@ namespace Gameplay.Runtime.Player.Combat {
         }
 
         void NotifyProjectileForceChange(bool forced) {
-            if (forced != false)
+            if (forced == false)
                 if (Mathf.Abs(_projectileForce - _lastProjectileForce) < 0.01f) return;
 
             _lastProjectileForce = _projectileForce;

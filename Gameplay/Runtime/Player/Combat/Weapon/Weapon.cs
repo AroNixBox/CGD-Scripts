@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Core.Runtime.Service;
 using Gameplay.Runtime.Player.Trajectory;
 using Sirenix.OdinInspector;
@@ -9,7 +10,7 @@ namespace Gameplay.Runtime.Player.Combat {
         [Tooltip("Bullet Spawn Point")]
         [SerializeField, Required] Transform muzzlePoint;
         [SerializeField] Animator animator;
-        [SerializeField] Renderer material;
+        [SerializeField] List<Renderer> meshRenderers;
 
         private MaterialPropertyBlock mpb;
 
@@ -29,9 +30,13 @@ namespace Gameplay.Runtime.Player.Combat {
             if (animator != null)
                 animator?.SetFloat(Force, currentPercent / 100);
 
-            if (material != null) {
+            if (meshRenderers.Count > 0) {
+                mpb.Clear();
                 mpb.SetFloat("_Activity", currentPercent / 100);
-                material.SetPropertyBlock(mpb);
+
+                foreach (var mat in meshRenderers) {
+                    mat.SetPropertyBlock(mpb);
+                }
             }
         }
 
