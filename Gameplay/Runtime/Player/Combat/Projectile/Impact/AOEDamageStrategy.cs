@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Gameplay.Runtime.Interfaces;
+using Gameplay.Runtime.Interfaces.Effects;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -105,8 +106,19 @@ namespace Gameplay.Runtime.Player.Combat {
                 var distanceScore = Mathf.Clamp(distanceObjectFromCenter / aoeRadius, 0, 1);
                 var damageIntensity = damageDropoffCurve.Evaluate(distanceScore) * rangeMultiplier;
 
-                float dmg = ApplyDamage(damageable, damageIntensity);
+                var dmg = ApplyDamage(damageable, damageIntensity);
                 
+                var knockbackIntensity = knockbackDropoffCurve.Evaluate(distanceScore) * rangeKnockbackMultiplier;
+                result.TotalKnockbackApplied = ApplyPhysics(damageable, knockbackIntensity, impactPosition);
+                
+                // Player specific logic
+                if(!overlappedObject.TryGetComponent(out PlayerController _))
+                    continue;
+                
+                // only log damage dealt to players
+                result.TotalDamageDealt = dmg;
+                
+                // Only store players as targets
                 // If the target is still alive, we can use it as tracking point
                 if (damageable.GetHealth() > 0) {
                     result.HitEntities.Add(overlappedObject.transform);
@@ -123,15 +135,6 @@ namespace Gameplay.Runtime.Player.Combat {
                         result.HitObjectOrigins.Add(topPoint);
                     }
                 }
-
-                var knockbackIntensity = knockbackDropoffCurve.Evaluate(distanceScore) * rangeKnockbackMultiplier;
-
-                // log only if player
-                if (damageable is EntityHealth health)
-                    if (health.TryGetComponent(out PlayerController _))
-                        result.TotalDamageDealt = dmg;
-
-                result.TotalKnockbackApplied = ApplyPhysics(damageable, knockbackIntensity, impactPosition);
             }
 
             // If no damageables were hit, add an elevated point to prevent extreme camera zoom
