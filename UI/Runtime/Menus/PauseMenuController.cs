@@ -107,7 +107,7 @@ namespace UI.Runtime.Menus {
         }
 
         void QuitGame() {
-            throw new NotImplementedException();
+            Application.Quit();
         }
 
         void OnDisable() {
