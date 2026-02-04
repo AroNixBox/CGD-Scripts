@@ -15,7 +15,7 @@ namespace UI.Runtime.Level {
                 weaponStash.OnWeaponDataAdded += AddWeapon;
                 weaponStash.OnWeaponDataSelected += SelectWeaponInUI;
                 weaponStash.OnAmmoChanged += UpdateWeaponAmmo;
-                weaponStash.OnProjectileForceChanged += UpdateShootingPower;
+                weaponStash.OnProjectileForcePercentageChanged += UpdateShootingPower;
             }
             if (controller != null) {
                 controller.OnCombatStanceStateEntered += view.ShowUI;
@@ -31,7 +31,7 @@ namespace UI.Runtime.Level {
                 weaponStash.OnWeaponDataAdded -= AddWeapon;
                 weaponStash.OnWeaponDataSelected -= SelectWeaponInUI;
                 weaponStash.OnAmmoChanged -= UpdateWeaponAmmo;
-                weaponStash.OnProjectileForceChanged -= UpdateShootingPower;
+                weaponStash.OnProjectileForcePercentageChanged -= UpdateShootingPower;
             }
             if (controller != null) {
                 controller.OnCombatStanceStateEntered -= view.ShowUI;
