@@ -1,4 +1,5 @@
 using System;
+using Core.Runtime.Service;
 using Cysharp.Threading.Tasks;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -24,7 +25,12 @@ namespace UI.Runtime.Level {
             if (fill == null) return;
 
             if (!fill.TryGetComponent(out Image fillImage)) return;
-            
+
+            // Wait for pulsate effect
+            if (ServiceLocator.TryGet(out ScreenDamageController screenDamageController)) {
+                await screenDamageController.PulsateAsync();
+            }
+
             // Clamp
             targetHealth = Mathf.Clamp(targetHealth, 0f, uiHealthBar.maxValue);
             
