@@ -29,7 +29,7 @@ namespace Gameplay.Runtime.Player.Combat {
         public event Action<ProjectileData.ProjectileCategory, WeaponData, int> OnWeaponDataSelected = delegate { };
         public event Action<ProjectileData.ProjectileCategory, WeaponData, int> OnAmmoChanged = delegate { };
         public event Action<Projectile> OnSuccessfulShot = delegate { };
-        public event Action<float> OnProjectileForceChanged = delegate { };
+        public event Action<float> OnProjectileForcePercentageChanged = delegate { };
         void Start() {
             if (loadout == null) throw new NullReferenceException("Weapon Loadout needs to be referenced");
 
@@ -212,8 +212,13 @@ namespace Gameplay.Runtime.Player.Combat {
                 if (Mathf.Abs(_projectileForce - _lastProjectileForce) < 0.01f) return;
 
             _lastProjectileForce = _projectileForce;
-            OnProjectileForceChanged?.Invoke(_projectileForce);
             _spawnedWeapon?.SetWeaponTension(_projectileForce);
+            
+            // projectile force in % for UI and for data collection
+            var projectileForcePercentage = 
+                (_projectileForce - _currentWeaponData.GlobalWeaponData.MinProjectileForce) / 
+                (_currentWeaponData.GlobalWeaponData.MaxProjectileForce - _currentWeaponData.GlobalWeaponData.MinProjectileForce) * 100;
+            OnProjectileForcePercentageChanged?.Invoke(projectileForcePercentage);
         }
 
         public bool TryFire(out Projectile projectile) {
@@ -274,7 +279,11 @@ namespace Gameplay.Runtime.Player.Combat {
             _projectileForce = StartProjectileForce;
             _lastProjectileForce = _projectileForce;
             
-            OnProjectileForceChanged?.Invoke(_projectileForce);
+            // projectile force in % for UI and for data collection
+            var projectileForcePercentage = 
+                (_projectileForce - _currentWeaponData.GlobalWeaponData.MinProjectileForce) / 
+                (_currentWeaponData.GlobalWeaponData.MaxProjectileForce - _currentWeaponData.GlobalWeaponData.MinProjectileForce) * 100;
+            OnProjectileForcePercentageChanged?.Invoke(projectileForcePercentage);
         }
 
         public void PredictTrajectory() {
