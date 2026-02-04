@@ -2,10 +2,12 @@
 using Core.Runtime.Authority;
 using Gameplay.Runtime.Interfaces;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Gameplay.Runtime.Player {
     public class EntityHealth : MonoBehaviour, IDamageable {
         [SerializeField] uint maxHealth = 100;
+        [SerializeField] UnityEvent onTakeDamage;
         float _currentHealth;
         public event Action<float> OnCurrentHealthChanged = delegate { };
 
@@ -23,6 +25,7 @@ namespace Gameplay.Runtime.Player {
             _currentHealth -= damage;
             _currentHealth = Mathf.Clamp(_currentHealth, 0, _currentHealth);
             OnCurrentHealthChanged?.Invoke(_currentHealth);
+            onTakeDamage?.Invoke();
             
             // Did the player die this round?
             if (!(_currentHealth <= 0)) return;
