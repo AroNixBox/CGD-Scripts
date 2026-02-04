@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using Gameplay.Runtime.Interfaces;
 using Gameplay.Runtime.Interfaces.Effects;
 using Sirenix.OdinInspector;
+using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.Events;
+using Object = UnityEngine.Object;
 
 namespace Gameplay.Runtime.Player.Combat {
     [Serializable]
@@ -55,6 +58,24 @@ namespace Gameplay.Runtime.Player.Combat {
             "Curve to evaluate knockback multiplier based on distance from shooter to impact. X-axis is normalized distance (0-1), Y-axis is knockback multiplier.")]
         [SerializeField]
         AnimationCurve rangeKnockbackRampUpCurve = AnimationCurve.Linear(0, 0.5f, 1, 1f);
+        
+        [Header("Effects")]
+        [Tooltip("Camera shake intensity (independent of damage).")]
+        [SerializeField]
+        float maxImpulseForce = 3f;
+        
+        [Tooltip("Number of shake waves to generate.")]
+        [SerializeField]
+        int waveCount = 5;
+
+        [Tooltip("Time between each wave in seconds.")]
+        [SerializeField]
+        float waveInterval = 0.08f;
+
+        [Header("Visual Effects")]
+        [Tooltip("VFX Prefab that will be spawned at the impact position (ground debris, rocks, etc).")]
+        [SerializeField]
+        GameObject impactVfxPrefab;
 
 
         public float MaximumDamage => maximumDamage;
@@ -85,6 +106,12 @@ namespace Gameplay.Runtime.Player.Combat {
         }
 
         ImpactResult OnImpactInternal(Vector3 impactPosition, float rangeMultiplier, float rangeKnockbackMultiplier) {
+            // Spawn VFX at impact position
+            SpawnImpactVfx(impactPosition);
+            
+            // Generate camera impulse at every impact
+            GenerateCameraImpulse(impactPosition);
+            
             var result = new ImpactResult {
                 HitObjectOrigins = new List<Vector3>(),
                 HitEntities = new List<Transform>()
@@ -179,6 +206,67 @@ namespace Gameplay.Runtime.Player.Combat {
             }
 
             return totalForceMagnitude;
+        }
+
+        void GenerateCameraImpulse(Vector3 impactPosition) {
+            if (maxImpulseForce <= 0) return;
+
+            // Calculate duration per wave based on impulse strength
+            float waveDuration = Mathf.Lerp(0.05f, 0.15f, maxImpulseForce / 10f);
+
+            // Start coroutine-like behavior using a MonoBehaviour helper
+            var impulseHelper = new GameObject("ImpulseWaveHelper");
+            var helper = impulseHelper.AddComponent<ImpulseWaveGenerator>();
+            helper.StartWaves(impactPosition, maxImpulseForce, waveCount, waveInterval, waveDuration);
+        }
+        
+        void SpawnImpactVfx(Vector3 impactPosition) {
+            if (impactVfxPrefab == null) return;
+            
+            Object.Instantiate(impactVfxPrefab, impactPosition, Quaternion.identity);
+        }
+    }
+    
+    /// <summary>
+    /// Helper MonoBehaviour to generate multiple impulse waves over time
+    /// </summary>
+    public class ImpulseWaveGenerator : MonoBehaviour {
+        public void StartWaves(Vector3 position, float baseStrength, int waves, float interval, float waveDuration) {
+            StartCoroutine(GenerateWaves(position, baseStrength, waves, interval, waveDuration));
+        }
+        
+        System.Collections.IEnumerator GenerateWaves(Vector3 position, float baseStrength, int waves, float interval, float waveDuration) {
+            for (int i = 0; i < waves; i++) {
+                // Each wave gets progressively weaker (1.0 -> 0.2)
+                float waveMultiplier = Mathf.Lerp(1f, 0.2f, (float)i / (waves - 1));
+                float waveStrength = baseStrength * waveMultiplier;
+                
+                // Create impulse source for this wave
+                var impulseGo = new GameObject($"ImpulseWave_{i}");
+                impulseGo.transform.position = position;
+                var impulseSource = impulseGo.AddComponent<CinemachineImpulseSource>();
+                
+                // Configure the impulse
+                impulseSource.ImpulseDefinition.ImpulseChannel = -1;
+                impulseSource.ImpulseDefinition.ImpulseDuration = waveDuration;
+                impulseSource.ImpulseDefinition.ImpulseType = CinemachineImpulseDefinition.ImpulseTypes.Uniform;
+                impulseSource.ImpulseDefinition.ImpulseShape = CinemachineImpulseDefinition.ImpulseShapes.Bump;
+                impulseSource.ImpulseDefinition.DissipationRate = 0.5f;
+                
+                // Generate this wave
+                impulseSource.GenerateImpulseWithForce(waveStrength);
+                
+                // Destroy this wave's source after it completes
+                Destroy(impulseGo, waveDuration + 0.2f);
+                
+                // Wait before next wave (except for last one)
+                if (i < waves - 1) {
+                    yield return new WaitForSeconds(interval);
+                }
+            }
+            
+            // Destroy the helper
+            Destroy(gameObject, 0.1f);
         }
     }
 }
