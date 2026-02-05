@@ -56,8 +56,6 @@ namespace UI.Runtime {
 
             view.SetProgress(1f);
 
-            await UniTask.Delay(100);
-
             op.allowSceneActivation = true;
         }
 
