@@ -212,12 +212,12 @@ namespace Gameplay.Runtime.Player.Combat {
                 if (Mathf.Abs(_projectileForce - _lastProjectileForce) < 0.01f) return;
 
             _lastProjectileForce = _projectileForce;
-            _spawnedWeapon?.SetWeaponTension(_projectileForce);
             
             // projectile force in % for UI and for data collection
             var projectileForcePercentage = 
                 (_projectileForce - _currentWeaponData.GlobalWeaponData.MinProjectileForce) / 
                 (_currentWeaponData.GlobalWeaponData.MaxProjectileForce - _currentWeaponData.GlobalWeaponData.MinProjectileForce) * 100;
+            _spawnedWeapon?.SetWeaponTension(projectileForcePercentage);
             OnProjectileForcePercentageChanged?.Invoke(projectileForcePercentage);
         }
 
