@@ -11,8 +11,14 @@ namespace UI.Runtime.Level {
         [SerializeField, Required] TMP_Text label;
         [SerializeField, Required] Image image;
         [SerializeField, Required] Slider uiHealthBar;
+        [Header("Effects")]
+        [Title("Healthbar-Change")]
         [SerializeField, Required] Color flickeringHealthBarColor = new(0f, 0f, 0f, 1f); // flickering color
         [SerializeField, Required] float flickerSpeed = 25f; // fast flickering
+
+        [Title("Healthbar-Change")] 
+        [SerializeField] Color activePlayerTextColor;
+        Color _inactivePlayerTextColor;
 
         public void UpdateHealthBar(float currentHealth) {
             if (uiHealthBar ==  null) return;
@@ -76,6 +82,9 @@ namespace UI.Runtime.Level {
             fillImage.color = normalColor;
         }
 
+        public void SetNameToActiveColor() => label.color = activePlayerTextColor;
+        public void SetNameToInactiveColor() => label.color = _inactivePlayerTextColor;
+
         public void InitializeHealthBar(float maxHealth, string labelText, Sprite sprite) {
             if (uiHealthBar == null)
                 throw new NullReferenceException("Healthbar not assigend properly in the Inspector");
@@ -87,6 +96,8 @@ namespace UI.Runtime.Level {
                 label.text = labelText;
             if(image != null && sprite != null)
                 image.sprite = sprite;
+
+            _inactivePlayerTextColor = label.color;
 
             // TODO:
             // Already in LayoutGroup, so can just reset the index of image and textalign of TMP to re-order
