@@ -23,7 +23,7 @@ namespace UI.Runtime.Menus {
                 onRestart: () => SceneManager.LoadScene(SceneManager.GetActiveScene().name),
                 onSettings: OpenSettings,
                 onHelp: OpenHelp,
-                onMenu: () => SceneManager.LoadScene("Scenes/User Hub"),
+                onMenu: () => SceneManager.LoadScene("Scenes/Main Menu"),
                 onQuit: QuitGame
             );
             view.Hide();
