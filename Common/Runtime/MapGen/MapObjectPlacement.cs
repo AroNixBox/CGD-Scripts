@@ -1,7 +1,8 @@
-using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
+
+using UnityEngine;
 using System.Collections.Generic;
-using System.IO;
 
 [System.Serializable]
 public class InstanceData {
@@ -57,17 +58,16 @@ public class MapObjectPlacement : MonoBehaviour {
         // "Objects" Container erstellen (auf gleicher Hierarchie-Ebene)
         GameObject parent = new("Objects");
         Undo.RegisterCreatedObjectUndo(parent, "Create Objects Container");
-
         // Auf gleicher Ebene platzieren
         if (transform.parent != null)
             parent.transform.parent = transform.parent;
 
         foreach (var inst in instances) {
             if (!prefabMap.TryGetValue(inst.name, out GameObject prefab)) {
-                Debug.LogWarning($"Kein Prefab gefunden für '{inst.name}'.");
+                Debug.LogWarning($"Kein Prefab gefunden fï¿½r '{inst.name}'.");
                 continue;
             }
-
+            
             GameObject obj = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             obj.transform.position = new Vector3(inst.position[0], inst.position[2], inst.position[1]);
             obj.transform.eulerAngles = new Vector3(-inst.rotation[0], -inst.rotation[2], inst.rotation[1]);
@@ -85,13 +85,13 @@ public class MapObjectPlacement : MonoBehaviour {
 
         if (existing != null) {
             Undo.DestroyObjectImmediate(existing.gameObject);
-            Debug.Log("Vorherige 'Objects'-Instanz gelöscht.");
+            Debug.Log("Vorherige 'Objects'-Instanz gelï¿½scht.");
         }
     }
 }
 
 // ------------------------------------------------------------
-// JSON Helper für Arrays
+// JSON Helper fï¿½r Arrays
 // ------------------------------------------------------------
 public static class JsonHelper {
     public static T[] FromJson<T>(string json) {
@@ -127,3 +127,4 @@ public class MapPlacerEditor : Editor {
         }
     }
 }
+#endif
