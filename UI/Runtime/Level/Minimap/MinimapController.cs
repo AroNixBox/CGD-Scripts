@@ -37,7 +37,6 @@ namespace UI.Runtime.Level.Minimap {
         private AuthorityManager _authorityManager;
         private AuthorityEntity _currentActiveEntity;
         private PlayerController _currentActivePlayerController;
-        private bool _isInCombatStance;
 
         private void Start() {
             if (ServiceLocator.TryGet(out _authorityManager)) {
@@ -94,7 +93,6 @@ namespace UI.Runtime.Level.Minimap {
             }
             
             if (_currentActiveEntity == entity) {
-                UnsubscribeFromCombatEvents();
                 _currentActiveEntity = null;
                 _currentActivePlayerController = null;
                 _activeViewCone.gameObject.SetActive(false);
@@ -102,34 +100,26 @@ namespace UI.Runtime.Level.Minimap {
         }
 
         private void HandleAuthorityGained(AuthorityEntity entity) {
-            // Unsubscribe from previous player's events
-            UnsubscribeFromCombatEvents();
-            
             _currentActiveEntity = entity;
-            _isInCombatStance = false;
             
             // Update icon states
             foreach (var kvp in _playerIcons) {
                 kvp.Value.SetActive(kvp.Key == entity);
             }
             
-            // Subscribe to combat stance events
+            // Cache PlayerController reference
             if (_playerControllers.TryGetValue(entity, out var playerController)) {
                 _currentActivePlayerController = playerController;
-                playerController.OnCombatStanceStateEntered += HandleCombatStanceEntered;
-                playerController.OnCombatStanceStateExited += HandleCombatStanceExited;
             }
             
-            // View cone is hidden until player enters combat stance
-            _activeViewCone.gameObject.SetActive(false);
+            // Show view cone immediately
+            _activeViewCone.gameObject.SetActive(true);
         }
 
         private void HandleAuthorityRevoked(AuthorityEntity entity) {
             if (_currentActiveEntity == entity) {
-                UnsubscribeFromCombatEvents();
                 _currentActiveEntity = null;
                 _currentActivePlayerController = null;
-                _isInCombatStance = false;
                 _activeViewCone.gameObject.SetActive(false);
                 
                 foreach (var kvp in _playerIcons) {
@@ -138,22 +128,6 @@ namespace UI.Runtime.Level.Minimap {
             }
         }
         
-        private void UnsubscribeFromCombatEvents() {
-            if (_currentActivePlayerController != null) {
-                _currentActivePlayerController.OnCombatStanceStateEntered -= HandleCombatStanceEntered;
-                _currentActivePlayerController.OnCombatStanceStateExited -= HandleCombatStanceExited;
-            }
-        }
-        
-        private void HandleCombatStanceEntered() {
-            _isInCombatStance = true;
-            _activeViewCone.gameObject.SetActive(true);
-        }
-        
-        private void HandleCombatStanceExited() {
-            _isInCombatStance = false;
-            _activeViewCone.gameObject.SetActive(false);
-        }
 
         private void UpdateIconPositions() {
             foreach (var kvp in _playerIcons) {
@@ -169,7 +143,7 @@ namespace UI.Runtime.Level.Minimap {
         }
 
         private void UpdateViewCone() {
-            if (_currentActiveEntity == null || _activeViewCone == null || !_isInCombatStance) return;
+            if (_currentActiveEntity == null || _activeViewCone == null) return;
             
             var worldPos = _currentActiveEntity.transform.position;
             var minimapPos = WorldToMinimapPosition(worldPos);
