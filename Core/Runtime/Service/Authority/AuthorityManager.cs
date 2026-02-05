@@ -30,6 +30,9 @@ namespace Core.Runtime.Authority {
         
         List<AuthorityEntity> _authorityEntities = new();
         Dictionary<AuthorityEntity, UserData> _authEntityUserMapping = new();
+
+        public bool IsUserAuthorityEntity(AuthorityEntity authEntity, UserData usrData) =>
+            _authEntityUserMapping.ContainsKey(authEntity) && _authEntityUserMapping[authEntity].Equals(usrData);
         List<Transform> _availableSpawnPoints = new();
         
         float _currentTurnTime;
