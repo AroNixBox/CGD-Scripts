@@ -153,7 +153,8 @@ namespace Gameplay.Runtime.Player.Combat {
         void ApplyEffects() { 
             // Sfx
             var impactSfx = _impactData.GetImpactSfx();
-            PlayImpactSound(impactSfx);
+            var impactSfxVolume = _impactData.ImpactSfxVolume();
+            PlayImpactSound(impactSfx, impactSfxVolume);
 
             // Vfx
             var impactVfx = _impactData.GetImpactVfx();
@@ -161,12 +162,12 @@ namespace Gameplay.Runtime.Player.Combat {
         }
         
         // TODO: Audio Manager
-        void PlayImpactSound(AudioClip clip) {
+        void PlayImpactSound(AudioClip clip, float volume) {
             if (clip == null)
                 return;
             
             if (clip != null)
-                AudioSource.PlayClipAtPoint(clip, transform.position);
+                AudioSource.PlayClipAtPoint(clip, transform.position, volume);
         }
         
         // TODO: Effect-Manger & Pool?

@@ -37,6 +37,8 @@ namespace Gameplay.Runtime.Player.Combat {
         public GameObject GetImpactVfx() => impactVfx;
         [SerializeField] AudioClip impactSfx;
         public AudioClip GetImpactSfx() => impactSfx;
+        [SerializeField] float impactSfxVolume = 1;
+        public float ImpactSfxVolume() => impactSfxVolume;
         [SerializeField] GameObject projectileRemainder;
         public GameObject GetImpactProjectileRemainder() => projectileRemainder;
 
